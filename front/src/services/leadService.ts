@@ -17,6 +17,8 @@ export interface ILeadInput {
 export interface ILead {
   _id: string
   full_name: string
+  first_name: string
+  last_name: string
   email: string
   mobile_phone: string
   status: LeadStatus
@@ -25,6 +27,15 @@ export interface ILead {
   adnetwork?: { _id: string, name: string }
   contact?: { document_type?: string, document?: string }
 }
+
+export interface IInteraction {
+  _id: string
+  type: 'whatsapp' | 'email' | 'form' | 'sms' | 'callit'
+  source: 'human' | 'machine'
+  created_at: string
+}
+
+export type ContactChannel = 'whatsapp' | 'email'
 
 export interface ILeadStats {
   total: number
@@ -45,8 +56,15 @@ export const leadService = {
   stats: async() =>{
     return await get({api: `${api}/stats`})
   },
-  upsert: async(data: ILeadInput & { _id?: string }) =>{
+  upsert: async(data: ILeadInput & { _id?: string, status?: LeadStatus }) =>{
     return await post({api: `${api}/upsert`, options: { data }})
+  },
+  remove: async(_id: string) =>{
+    return await post({api: `${api}/delete`, options: { data: { _id } }})
+  },
+  // Registra el contacto y devuelve el link (wa.me o mailto) para abrir
+  contact: async(_id: string, channel: ContactChannel) =>{
+    return await post({api: `${api}/contact`, options: { data: { _id, channel } }})
   },
   // Formulario público de inscripción: no requiere sesión
   external: async(data: ILeadInput) =>{

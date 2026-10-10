@@ -13,7 +13,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { app, user } from "@/atoms/kuepa"
-import {  TbHeartHandshake, TbHomeHeart, TbMessageHeart } from "react-icons/tb"
+import {  TbHeartHandshake, TbHomeHeart, TbMessageHeart, TbSettings } from "react-icons/tb"
 import { useStore } from "@nanostores/react"
 // This is sample data.
 const data:any = {
@@ -44,6 +44,13 @@ const data:any = {
           can: 'crm:leads',
         },
       ],
+    },
+    {
+      title: "Configuración",
+      url: "/settings",
+      icon: TbSettings,
+      accent: 'purple',
+      can: 'crm:settings',
     },
   ]
 }

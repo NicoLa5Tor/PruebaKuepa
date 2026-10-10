@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import { LeadStatus } from '@/services/leadService'
 
-const LEAD_STATUS: Record<LeadStatus, { label: string, className: string }> = {
+export const LEAD_STATUS: Record<LeadStatus, { label: string, className: string }> = {
   active: { label: 'Nuevo', className: 'bg-sky-50 text-sky-800 ring-sky-200' },
   grading: { label: 'En gestión', className: 'bg-amber-50 text-amber-800 ring-amber-200' },
   sold: { label: 'Matriculado', className: 'bg-emerald-50 text-emerald-800 ring-emerald-200' },

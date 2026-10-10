@@ -5,12 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
-import { FieldError, ILeadInput } from '@/services/leadService'
+import { FieldError, ILead, ILeadInput, LeadStatus } from '@/services/leadService'
+import { LEAD_STATUS } from './lead-status'
 import { IProgram, programService } from '@/services/programService'
 import { IDocumentType } from '@/services/globalService'
 import { useSetting } from '@/hooks/use-setting'
 
-const EMPTY: ILeadInput = {
+// En edición se agrega el estado; un lead nuevo siempre nace 'active' en el back
+type LeadFormData = ILeadInput & { status?: LeadStatus }
+
+const EMPTY: LeadFormData = {
   first_name: '',
   last_name: '',
   // Se completa con el primer tipo configurado en la base
@@ -42,7 +46,18 @@ const RESPONSE_ERRORS: Record<number, string> = {
 const messageFor = (field: string, error: FieldError) =>
   MESSAGES[field]?.[error] || (error === 'required' ? 'Este campo es obligatorio' : 'Valor inválido')
 
-const validate = (data: ILeadInput) => {
+const toFormData = (lead: ILead): LeadFormData => ({
+  first_name: lead.first_name || '',
+  last_name: lead.last_name || '',
+  document_type: lead.contact?.document_type || '',
+  document: lead.contact?.document || '',
+  email: lead.email || '',
+  mobile_phone: lead.mobile_phone || '',
+  interestProgram: lead.interestProgram?._id || '',
+  status: lead.status,
+})
+
+const validate = (data: LeadFormData) => {
   const fields: Record<string, FieldError> = {}
   for (const [field, value] of Object.entries(data)) {
     if (!value.trim()) fields[field] = 'required'
@@ -55,21 +70,24 @@ const validate = (data: ILeadInput) => {
 
 export interface LeadFormProps {
   // Devuelve la respuesta del back ({ code, fields?, ... })
-  onSubmit: (data: ILeadInput) => Promise<any>
+  onSubmit: (data: LeadFormData) => Promise<any>
+  // Con un lead el formulario edita (y muestra el estado); sin él, crea
+  initialData?: ILead
   onSuccess?: (response: any) => void
   submitLabel?: string
   accent?: 'purple' | 'orange'
 }
 
-export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', accent = 'purple' }: LeadFormProps) {
-  const [data, setData] = useState<ILeadInput>(EMPTY)
+export function LeadForm({ onSubmit, onSuccess, initialData, submitLabel = 'Guardar lead', accent = 'purple' }: LeadFormProps) {
+  const [data, setData] = useState<LeadFormData>(initialData ? toFormData(initialData) : EMPTY)
   const [errors, setErrors] = useState<Record<string, FieldError>>({})
   const [general, setGeneral] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [programs, setPrograms] = useState<IProgram[]>([])
   const { value: documentTypes, loading: loadingSettings } = useSetting<IDocumentType[]>('document_types')
 
-  const defaultDocumentType = documentTypes?.[0]?.value || ''
+  const activeDocumentTypes = (documentTypes || []).filter((type) => type.active)
+  const defaultDocumentType = activeDocumentTypes[0]?.value || ''
 
   useEffect(() => {
     programService.list().then((response) => setPrograms(response?.list || []))
@@ -79,7 +97,7 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
     if (defaultDocumentType) setData((current) => current.document_type ? current : { ...current, document_type: defaultDocumentType })
   }, [defaultDocumentType])
 
-  const set = (field: keyof ILeadInput) => (value: string) => {
+  const set = (field: keyof LeadFormData) => (value: string) => {
     setData((current) => ({ ...current, [field]: value }))
     if (errors[field]) setErrors(({ [field]: _removed, ...rest }) => rest)
   }
@@ -106,7 +124,7 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
     }
   }
 
-  const field = (name: keyof ILeadInput, label: string, input: JSX.Element, className?: string) => (
+  const field = (name: keyof LeadFormData, label: string, input: JSX.Element, className?: string) => (
     <div className={cn('flex flex-col gap-1.5', className)}>
       <Label htmlFor={name} className={errors[name] ? 'text-red-600' : ''}>{label}</Label>
       {input}
@@ -116,7 +134,7 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
     </div>
   )
 
-  const inputProps = (name: keyof ILeadInput) => ({
+  const inputProps = (name: Exclude<keyof LeadFormData, 'status'>) => ({
     id: name,
     value: data[name],
     disabled: loading,
@@ -137,7 +155,7 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
           <AlertDescription>{general}</AlertDescription>
         </Alert>
       ) : null}
-      {!loadingSettings && !documentTypes?.length ? (
+      {!loadingSettings && !activeDocumentTypes.length ? (
         <Alert variant="destructive" className="sm:col-span-2">
           <AlertDescription>No pudimos cargar la configuración del formulario. Intenta más tarde.</AlertDescription>
         </Alert>
@@ -152,7 +170,7 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
             <SelectValue placeholder="Selecciona" />
           </SelectTrigger>
           <SelectContent>
-            {(documentTypes || []).map((type) => (
+            {activeDocumentTypes.map((type) => (
               <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
             ))}
           </SelectContent>
@@ -176,6 +194,20 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
         </Select>,
         'sm:col-span-2'
       )}
+
+      {initialData ? field('status', 'Estado',
+        <Select value={data.status} onValueChange={set('status')} disabled={loading}>
+          <SelectTrigger id="status" aria-invalid={!!errors.status}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(LEAD_STATUS).map(([value, status]) => (
+              <SelectItem key={value} value={value}>{status.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>,
+        'sm:col-span-2'
+      ) : null}
 
       <div className="sm:col-span-2 flex justify-end pt-2">
         <Button type="submit" disabled={loading} className={cn('w-full sm:w-auto min-w-40', button)}>

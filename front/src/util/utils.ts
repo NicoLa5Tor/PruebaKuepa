@@ -18,3 +18,13 @@ export function decodeBase64UrlSafe(base64UrlSafe:string) {
   }
   return atob(base64);
 }
+
+// Devuelve una copia de la lista con el elemento index movido una posición (-1 arriba, 1 abajo)
+export const moveItem = <T>(list: T[], index: number, direction: -1 | 1): T[] => {
+  const target = index + direction
+  if (target < 0 || target >= list.length) return list
+  const copy = [...list]
+  const [item] = copy.splice(index, 1)
+  copy.splice(target, 0, item)
+  return copy
+}

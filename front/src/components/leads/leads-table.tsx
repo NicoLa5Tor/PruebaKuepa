@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { ILead } from '@/services/leadService'
 import { LeadStatusBadge } from './lead-status'
+import { RowAction, RowActions } from '@/components/crud/row-actions'
 
 export interface LeadsTableProps {
   leads: ILead[]
@@ -12,9 +13,11 @@ export interface LeadsTableProps {
   emptyMessage?: string
   // Fila recién llegada en tiempo real, se resalta brevemente
   highlightId?: string | null
+  // Acciones del menú "⋯" de cada fila; sin ellas no se muestra la columna
+  actions?: (lead: ILead) => RowAction[]
 }
 
-export function LeadsTable({ leads, loading, highlightId, emptyMessage = 'Todavía no hay leads registrados.' }: LeadsTableProps) {
+export function LeadsTable({ leads, loading, highlightId, actions, emptyMessage = 'Todavía no hay leads registrados.' }: LeadsTableProps) {
   if (loading) {
     return (
       <div className="flex flex-col gap-2">
@@ -43,6 +46,7 @@ export function LeadsTable({ leads, loading, highlightId, emptyMessage = 'Todav�
           <TableHead className="hidden xl:table-cell">Origen</TableHead>
           <TableHead>Estado</TableHead>
           <TableHead className="hidden sm:table-cell text-right">Registro</TableHead>
+          {actions ? <TableHead className="w-10"><span className="sr-only">Acciones</span></TableHead> : null}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -65,6 +69,7 @@ export function LeadsTable({ leads, loading, highlightId, emptyMessage = 'Todav�
             <TableCell className="hidden sm:table-cell text-right text-slate-500 text-sm whitespace-nowrap" title={moment(lead.created_at).format('LLL')}>
               {moment(lead.created_at).fromNow()}
             </TableCell>
+            {actions ? <TableCell className="text-right"><RowActions actions={actions(lead)} /></TableCell> : null}
           </TableRow>
         ))}
       </TableBody>

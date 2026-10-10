@@ -7,6 +7,7 @@ import Leads from './pages/leads/leads';
 import { AppLayout } from './components/layouts/app-layout';
 import { RequireAuth } from './components/require-auth';
 import Home from './pages/home/home';
+import Settings from './pages/settings/settings';
 
 const Login = lazy(() => import('@/pages/auth/login')); 
 const Inscription = lazy(() => import('@/pages/inscription/inscription'));
@@ -51,6 +52,17 @@ const router = createBrowserRouter([
         <AppLayout module="crm" window="contact">
           <Suspense fallback={<Loading mode="logo" />}>
             <Home />
+          </Suspense>
+        </AppLayout>
+      </RequireAuth>
+  },
+  {
+    path: '/settings',
+    element: 
+      <RequireAuth>
+        <AppLayout module="crm" window="settings">
+          <Suspense fallback={<Loading mode="logo" />}>
+            <Settings />
           </Suspense>
         </AppLayout>
       </RequireAuth>

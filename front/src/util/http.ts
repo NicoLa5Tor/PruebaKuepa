@@ -8,6 +8,14 @@ const URL = `${config.api}/api`
 
 const app = 'kuepa'
 
+// Borra el cache de un GET (para cualquier token) después de modificar ese recurso
+export const clearCache = (api: string) => {
+  const prefix = `${app}:cache:get${api}:`
+  Object.keys(localStorage)
+  .filter((key) => key.startsWith(prefix))
+  .forEach((key) => localStorage.removeItem(key))
+}
+
 export const get = async(_params:{api:string, options?:any}) =>{
   try{
     if(!_params.options){

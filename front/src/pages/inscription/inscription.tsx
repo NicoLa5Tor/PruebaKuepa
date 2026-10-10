@@ -1,22 +1,13 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { IconType } from "react-icons"
-import { TbCertificate, TbCircleCheck, TbClock, TbDeviceLaptop, TbHeadset, TbSchool } from "react-icons/tb"
+import { TbCircleCheck } from "react-icons/tb"
 import { LeadForm } from "@/components/leads/lead-form"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSetting } from "@/hooks/use-setting"
 import { IInscriptionPage } from "@/services/globalService"
 import { ILeadInput, leadService } from "@/services/leadService"
-
-// Lista blanca de íconos que puede nombrar la configuración de la página
-const ICONS: Record<string, IconType> = {
-  school: TbSchool,
-  clock: TbClock,
-  headset: TbHeadset,
-  laptop: TbDeviceLaptop,
-  certificate: TbCertificate,
-}
+import { BENEFIT_ICONS } from "@/components/inscription/benefit-icons"
 
 // Página pública: un prospecto deja sus datos y llega al CRM como lead orgánico
 function Inscription () {
@@ -47,7 +38,7 @@ function Inscription () {
               <h1 className="text-4xl font-bold leading-tight">{page?.heading}</h1>
               <ul className="flex flex-col gap-4">
                 {page?.benefits?.map((benefit) => {
-                  const Icon = ICONS[benefit.icon]
+                  const Icon = BENEFIT_ICONS[benefit.icon]?.icon
                   return (
                     <li key={benefit.text} className="flex items-center gap-3 text-orange-50">
                       {Icon ? <Icon className="h-6 w-6 shrink-0 text-orange-300" /> : null}
