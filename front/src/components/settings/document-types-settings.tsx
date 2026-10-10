@@ -25,19 +25,22 @@ export function DocumentTypesSettings() {
     >
       <ul className="flex flex-col divide-y divide-slate-100">
         {types.map((type, index) => (
-          <li key={type.value} className="flex items-center gap-3 py-2">
+          // En pantallas angostas los controles bajan a una segunda línea y el nombre conserva su ancho
+          <li key={type.value} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2">
             <span className="w-10 shrink-0 text-xs font-semibold uppercase text-slate-400">{type.value}</span>
             <Input
               value={type.label}
               onChange={(e) => update(index, { label: e.target.value })}
               aria-label={`Nombre de ${type.value}`}
-              className={cn('grow', errors[`${index}.label`] && 'border-red-400')}
+              className={cn('min-w-[10rem] flex-1', errors[`${index}.label`] && 'border-red-400')}
             />
-            <label className="flex items-center gap-2 text-xs text-slate-500">
-              <Switch checked={type.active} onCheckedChange={(active) => update(index, { active })} />
-              Activo
-            </label>
-            <ReorderButtons index={index} total={types.length} onMove={(direction) => setValue(moveItem(types, index, direction))} />
+            <div className="ml-auto flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs text-slate-500">
+                <Switch checked={type.active} onCheckedChange={(active) => update(index, { active })} />
+                Activo
+              </label>
+              <ReorderButtons index={index} total={types.length} onMove={(direction) => setValue(moveItem(types, index, direction))} />
+            </div>
           </li>
         ))}
       </ul>

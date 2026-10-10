@@ -79,9 +79,10 @@ export function InscriptionSettings() {
               {value.benefits.map((benefit, index) => {
                 const Icon = BENEFIT_ICONS[benefit.icon]?.icon
                 return (
-                  <li key={index} className="flex items-center gap-2">
+                  // En celular el ícono ocupa su propia línea y el texto conserva su ancho
+                  <li key={index} className="flex flex-wrap items-center gap-2">
                     <Select value={benefit.icon} onValueChange={(icon) => updateBenefit(index, { icon })}>
-                      <SelectTrigger className="w-40 shrink-0" aria-label="Ícono">
+                      <SelectTrigger className="w-full sm:w-40 sm:shrink-0" aria-label="Ícono">
                         {Icon ? <Icon className="h-4 w-4 text-purple-700" /> : null}
                         <SelectValue />
                       </SelectTrigger>
@@ -95,7 +96,7 @@ export function InscriptionSettings() {
                       value={benefit.text}
                       onChange={(e) => updateBenefit(index, { text: e.target.value })}
                       aria-label={`Beneficio ${index + 1}`}
-                      className={cn('grow', invalid(`benefits.${index}.text`))}
+                      className={cn('min-w-[8rem] flex-1', invalid(`benefits.${index}.text`))}
                     />
                     <ReorderButtons index={index} total={value.benefits.length} onMove={(direction) => setBenefits(moveItem(value.benefits, index, direction))} />
                     <Button

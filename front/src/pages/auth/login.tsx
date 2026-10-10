@@ -87,15 +87,16 @@ function Login () {
             </div>
           </div>
         : 
-          <div className="container relative flex h-[100vh] flex-col items-center w-full justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+          <div className="container relative flex h-[100dvh] overflow-hidden flex-col items-center w-full justify-center md:grid md:max-w-none md:grid-cols-2 md:px-0">
             <div className="relative hidden h-full flex-col bg-muted p-10 text-white md:flex">
               <div className="absolute inset-0 bg-orange-900" />
               <Link to='/' className="relative z-20 flex items-center text-4xl bg-white w-fit px-4 py-2 rounded-md font-bold">
                 <img src="/logo.jpeg" alt="logo" className="w-36 h-36 mr-2" />
               </Link>
             </div>
-            <div className="justify-center flex h-full w-full content-center items-center lg:p-8">
-              <div className="mx-auto flex w-full flex-col justify-center sm:w-[350px] min-h-[764px]">
+            {/* Solo esta columna hace scroll si la pantalla es muy baja: la página nunca se mueve */}
+            <div className="flex h-full w-full overflow-y-auto py-6 lg:p-8">
+              <div className="m-auto flex w-full flex-col justify-center sm:w-[350px]">
                 <div className="flex md:hidden w-full justify-center">
                   <Link to='/' className="flex mb-4 text-[4rem] font-bold">
                     <img src="/logo.jpeg" alt="logo" className="w-32 h-32 mr-2" />

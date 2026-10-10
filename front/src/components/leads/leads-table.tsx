@@ -41,7 +41,7 @@ export function LeadsTable({ leads, loading, highlightId, actions, emptyMessage 
         <TableRow>
           <TableHead>Nombre</TableHead>
           <TableHead className="hidden lg:table-cell">Documento</TableHead>
-          <TableHead>Contacto</TableHead>
+          <TableHead className="hidden sm:table-cell">Contacto</TableHead>
           <TableHead className="hidden md:table-cell">Programa</TableHead>
           <TableHead className="hidden xl:table-cell">Origen</TableHead>
           <TableHead>Estado</TableHead>
@@ -52,14 +52,18 @@ export function LeadsTable({ leads, loading, highlightId, actions, emptyMessage 
       <TableBody>
         {leads.map((lead) => (
           <TableRow key={lead._id} className={cn('transition-colors duration-1000', lead._id === highlightId && 'bg-purple-100')}>
-            <TableCell className="font-medium text-slate-800">{lead.full_name}</TableCell>
+            <TableCell className="font-medium text-slate-800">
+              {lead.full_name}
+              {/* En celular la columna Contacto se oculta: el email va bajo el nombre */}
+              <span className="block sm:hidden text-xs font-normal text-slate-500 break-all">{lead.email}</span>
+            </TableCell>
             <TableCell className="hidden lg:table-cell text-slate-600">
               <span className="uppercase text-xs text-slate-400 mr-1">{lead.contact?.document_type}</span>
               {lead.contact?.document}
             </TableCell>
-            <TableCell>
+            <TableCell className="hidden sm:table-cell">
               <div className="flex flex-col text-sm">
-                <span className="text-slate-700">{lead.email}</span>
+                <span className="text-slate-700 break-all">{lead.email}</span>
                 <span className="text-slate-500 text-xs">{lead.mobile_phone}</span>
               </div>
             </TableCell>

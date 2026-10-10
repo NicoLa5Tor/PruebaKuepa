@@ -32,18 +32,20 @@ export function AppLayout(props: AppLayoutProps) {
   let [searchParams] = useSearchParams();
 
   return (
-    <div className="flex flex-col w-screen h-screen">
-      <div className="flex w-full">
-        <div className="flex flex-col w-full">
+    // Alto exacto de la pantalla: la barra móvil y el encabezado ocupan su espacio
+    // y el contenido llena el resto con su propio scroll; la página nunca se mueve
+    <div className="flex flex-col w-screen h-[100dvh] overflow-hidden">
+      <div className="flex w-full flex-1 min-h-0">
+        <div className="flex flex-col w-full min-h-0">
           <div className="nav w-full flex md:hidden bg-slate-800  font-brand text-white py-2 px-4 text-xl items-center justify-between">
             
             <span className='flex'>Kuepa</span>
             <div className="flex justify-end">
             </div>
           </div>
-          <SidebarProvider defaultOpen={$app?.sidebar}>
+          <SidebarProvider defaultOpen={$app?.sidebar} className="flex-1 min-h-0">
             <AppSidebar  className={`bg-${$app?.accent}-800 text-white transition-all ease-in-out`} />
-            <SidebarInset>
+            <SidebarInset className="min-h-0 overflow-hidden">
               <header className="flex z-50 backdrop-blur-sm bg-white/75 h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
                 <div className="flex items-center gap-1 px-4">
                   <SidebarTrigger className="-ml-1" />
@@ -97,9 +99,9 @@ export function AppLayout(props: AppLayoutProps) {
                   </Button>
                 </div>
               </header>
-              <div className="block p-1 md:p-0 absolute top-6 md:top-10 left-1/2 transform -translate-x-1/2 w-full md:min-h-screen-lg md:max-w-screen-xl m-auto">
-                <div className='relative'>
-                  <div className="h-[88vh] lg:h-[94vh] overflow-y-auto overflow-x-hidden w-full rounded-md p-1 pb-0 md:p-4">
+              <div className="flex-1 min-h-0 w-full md:max-w-screen-xl mx-auto p-1 md:p-0">
+                <div className='h-full'>
+                  <div className="h-full overflow-y-auto overflow-x-hidden w-full rounded-md p-1 pb-0 md:p-4">
                     {children}
                   </div>
                 </div>
