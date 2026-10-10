@@ -1,7 +1,12 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
+import path from 'path'
+
+// Docker inyecta las variables desde Dev/.env o Prod/.env y no las pisa.
+// Sin Docker, el proceso arranca en back/ y lee el .env que está al lado del compose de Dev.
+dotenv.config({ path: path.resolve(process.cwd(), '../Dev/.env') })
 
 if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET no está definido. Copia .env.example a .env y define un valor.')
+  throw new Error('JWT_SECRET no está definido. Defínelo en Dev/.env.')
 }
 
 export default {

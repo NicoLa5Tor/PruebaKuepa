@@ -1,0 +1,53 @@
+# Producción. No levantar en localhost: el widget de Turnstile solo acepta el dominio.
+# Secretos y site key: Prod/.env, al lado de este compose.
+name: prueba-kuepa-prod
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  back:
+    build: ../back
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/kuepa_test
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  front:
+    build:
+      context: ../front
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_PUBLIC_URL: ${VITE_PUBLIC_URL}
+        VITE_LOGTO_ENDPOINT: ${VITE_LOGTO_ENDPOINT}
+        VITE_LOGTO_APP_ID: ${VITE_LOGTO_APP_ID}
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY}
+    restart: unless-stopped
+    depends_on:
+      - back
+
+volumes:
+  mongo_data:

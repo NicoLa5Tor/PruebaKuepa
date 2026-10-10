@@ -6,13 +6,15 @@ Prueba técnica desarrollada por **Nicolás Rodríguez Torres**.
 
 ## Levantar con Docker
 
-Copia `back/.env.example` a `back/.env` y define `JWT_SECRET` y `SEED_ADMIN_PASSWORD`. Es el mismo archivo con y sin Docker.
+Copia `Dev/.env.example` a `Dev/.env` y define `JWT_SECRET` y `SEED_ADMIN_PASSWORD`. En producción, copia `Prod/.env.example` a `Prod/.env`. `back` no tiene `.env`.
+
+El compose de desarrollo está en `Dev/`. Ahí el captcha usa las llaves de prueba de Cloudflare. `Prod/` guarda el compose con el widget real y no se levanta en localhost.
 
 ```bash
-cp back/.env.example back/.env
-docker compose up -d --build
-docker compose exec back npm run cli -- --seeder initSeeder -f   # usuario de prueba
-docker compose exec back npm run cli -- --seeder crmSeeder -f    # programas, asesor, canales, campaña y configuración
+cp Dev/.env.example Dev/.env
+docker compose -f Dev/docker-compose.yml up -d --build
+docker compose -f Dev/docker-compose.yml exec back npm run cli -- --seeder initSeeder -f   # usuario de prueba
+docker compose -f Dev/docker-compose.yml exec back npm run cli -- --seeder crmSeeder -f    # programas, asesor, canales, campaña y configuración
 ```
 
 | Servicio | URL |
@@ -25,8 +27,8 @@ docker compose exec back npm run cli -- --seeder crmSeeder -f    # programas, as
 Usuario de prueba: `useradminket`, con la contraseña definida en `SEED_ADMIN_PASSWORD`.
 
 ```bash
-docker compose logs -f back   # ver logs del backend
-docker compose down           # apagar (agregar -v para borrar los datos de Mongo)
+docker compose -f Dev/docker-compose.yml logs -f back   # ver logs del backend
+docker compose -f Dev/docker-compose.yml down           # apagar (agregar -v para borrar los datos de Mongo)
 ```
 
 ## Qué se construyó
@@ -94,10 +96,7 @@ CRM ──popup──► Logto ──► Google / Facebook
 - `user_logged` solo se toma del middleware, nunca del body.
 - Los endpoints reciben una lista blanca de campos.
 - Los secretos viven en `.env` y no se suben al repositorio.
-- **Captcha (Cloudflare Turnstile)** en el login con contraseña y en el formulario público. El back lo verifica (`captchaMiddleware`) y falla cerrado si no hay secreto configurado. El repo trae las **llaves de prueba oficiales** de Cloudflare (siempre pasan, el widget muestra "Solo para pruebas"). En producción:
-  - `TURNSTILE_SECRET` en `back/.env`.
-  - `VITE_TURNSTILE_SITE_KEY` en `docker-compose.yml`.
-  - El hostname del sitio agregado al widget en Cloudflare.
+- **Captcha (Cloudflare Turnstile)** en el login con contraseña y en el formulario público. El back lo verifica (`captchaMiddleware`) y falla cerrado si no hay secreto configurado. `Dev/.env` trae las **llaves de prueba oficiales** de Cloudflare (siempre pasan, el widget muestra "Solo para pruebas"). `Prod/.env` trae la site key y el secreto del widget real. El hostname del sitio tiene que estar en el widget de Cloudflare.
 - **Límite de peticiones por IP** (`rateLimitMiddleware`), guardado en Redis y compartido entre instancias, con respaldo en memoria si Redis cae. Al exceder responde `429` con `Retry-After`:
 
   | Ruta | Límite |
@@ -109,11 +108,11 @@ CRM ──popup──► Logto ──► Google / Facebook
   Detrás de un proxy, `TRUST_PROXY=true` para leer la IP real.
 - **Login:** usuario inexistente y contraseña incorrecta responden igual (`401 auth.login.error`), así que no se puede averiguar qué usuarios existen.
 - **Usuarios:** solo autoservicio sobre el propio usuario (`/user/upsert` edita el perfil con lista blanca; `/user/upsert-address`). El base no aplica un rol de admin (`can()` siempre es `true`), así que listar, ver, borrar, registrar o editar a otros usuarios no se expone por HTTP.
-- **Pendiente para producción:** el `docker-compose.yml` publica MongoDB (`27017`) **sin contraseña**. Fuera de un entorno local hay que quitar esa publicación (o limitarla a `127.0.0.1`) y activar autenticación en Mongo.
+- **Pendiente para producción:** `Dev/docker-compose.yml` publica MongoDB (`27017`) **sin contraseña**. Fuera de un entorno local hay que quitar esa publicación (o limitarla a `127.0.0.1`) y activar autenticación en Mongo. `Prod/` todavía no está listo para desplegar.
 
 ## Levantar sin Docker
 
-Requiere un MongoDB local en `127.0.0.1:27017` y el mismo `back/.env`. Redis es opcional.
+Requiere un MongoDB local en `127.0.0.1:27017` y `Dev/.env`. El back lo lee desde esa carpeta. Redis es opcional.
 
 ```bash
 cd back && npm i && npm run dev
@@ -131,9 +130,9 @@ cd front && npm i && npm run dev
 | `SEED_ADMIN_PASSWORD` | back (seeder) | **obligatoria** para el seeder |
 | `SEED_ADMIN_EMAIL` | back (seeder) | vacío; con él, el usuario de prueba entra por Google o Facebook |
 | `LOGTO_ENDPOINT` / `LOGTO_APP_ID` | back | vacíos; necesarios para el inicio de sesión social |
-| `VITE_LOGTO_ENDPOINT` / `VITE_LOGTO_APP_ID` | front (build) | definidos en `docker-compose.yml` |
-| `TURNSTILE_SECRET` | back | llave de prueba de Cloudflare (siempre pasa) |
-| `VITE_TURNSTILE_SITE_KEY` | front (build) | llave de prueba de Cloudflare, en `docker-compose.yml` |
+| `VITE_LOGTO_ENDPOINT` / `VITE_LOGTO_APP_ID` | front (build) | definidos en `Dev/docker-compose.yml` |
+| `TURNSTILE_SECRET` | back | llave de prueba en `Dev/.env`; secreto real en `Prod/.env` |
+| `VITE_TURNSTILE_SITE_KEY` | front (build) | llave de prueba en `Dev/.env`; site key real en `Prod/.env` |
 | `TRUST_PROXY` | back | `false` |
 | `VITE_API_URL` | front (build) | `http://localhost:7001` |
 

@@ -6,7 +6,7 @@ import config from 'config'
 export const run = async(_params, console:IConsole) => {
   try{
     if(!process.env.SEED_ADMIN_PASSWORD){
-      console.log('SEED_ADMIN_PASSWORD no está definido en .env')
+      console.log('SEED_ADMIN_PASSWORD no está definido en Dev/.env')
       return false
     }
     

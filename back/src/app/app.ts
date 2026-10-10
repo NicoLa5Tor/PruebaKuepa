@@ -7,9 +7,7 @@ import config from 'config'
 import { request as request_mw } from "@app/middleware/requestMiddleware"
 import { DataBaseUtility } from "@core/utilities/dataBaseUtility"
 import { socketUtility } from "@core/utilities/socketUtility"
-import dotenv from 'dotenv';
 
-dotenv.config();
 class App {
 
   private app: express.Application
