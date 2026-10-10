@@ -100,10 +100,8 @@ export function AppLayout(props: AppLayoutProps) {
                 </div>
               </header>
               <div className="flex-1 min-h-0 w-full md:max-w-screen-xl mx-auto p-1 md:p-0">
-                <div className='h-full'>
-                  <div className="h-full overflow-y-auto overflow-x-hidden w-full rounded-md p-1 pb-0 md:p-4">
-                    {children}
-                  </div>
+                <div className="h-full overflow-y-auto overflow-x-hidden w-full rounded-md p-1 pb-0 md:p-4">
+                  {children}
                 </div>
               </div>
             </SidebarInset>
