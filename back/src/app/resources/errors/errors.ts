@@ -12,6 +12,9 @@ export const errors = {
   program: {
     error: { code: 500 },
   },
+  notification: {
+    error: { code: 500 },
+  },
   campaign: {
     not_found: { code: 404 },
   },

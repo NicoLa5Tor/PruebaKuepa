@@ -20,6 +20,12 @@ class ThirdService {
   
   constructor () {}
   
+  // Third que representa al usuario logueado dentro del CRM (el asesor)
+  public async findByUser (user) {
+    if (!user) return null
+    return await Third.findOne({ user }).lean()
+  }
+  
   public async ghost (_params:{brand:string, type:string}) {
     try {
       const third = await Third.findOne({

@@ -3,12 +3,16 @@ import mongoose from "mongoose"
 import moment from "moment"
 
 // @import_services
+import { thirdService } from "@app/domains/third/thirdService"
+import { notificationService } from "@app/domains/notification/notificationService"
 
 // @import_models
 import { Lead, Campaign, Third, Adnetwork, Tracking, Message, Interaction, Program } from "@app/models"
 
 // @import_utilities
 import { responseUtility } from "@core/utilities/responseUtility"
+import { socketUtility } from "@core/utilities/socketUtility"
+import { NotificationType } from "@app/models/notificationModel"
 
 // @import_types
 export interface ILeadInput {
@@ -129,9 +133,37 @@ class LeadService {
     return created.toObject()
   }
 
-  private async findAdviser (user_logged) {
-    if (!user_logged) return null
-    return await Third.findOne({ user: user_logged }).lean()
+  // Datos relacionados que muestra el CRM; los comparten list y el evento en vivo
+  private withSummary = (query) => query
+  .populate({
+    path: 'contact',
+    select: 'first_name last_name document_type document number',
+    options: { lean:true }
+  })
+  .populate({
+    path: 'interestProgram',
+    select: 'name',
+    options: { lean:true }
+  })
+  .populate({
+    path: 'adnetwork',
+    select: 'name',
+    options: { lean:true }
+  })
+
+  /**
+  * Avisa al asesor en tiempo real. Se llama con el lead ya guardado y sin await:
+  * si falla (Redis, socket) solo se registra, nunca rompe el registro del lead.
+  */
+  private async notifyAdviser (type: NotificationType, lead_id) {
+    try{
+      const lead = await this.withSummary(Lead.findOne({ _id: lead_id })).lean()
+      if (!lead?.adviser) return
+      if (type === 'lead_created') socketUtility.emitToAdviser(lead.adviser, 'lead:created', lead)
+      await notificationService.create({ adviser: lead.adviser, type, lead })
+    } catch (error) {
+      console.log('error', error)
+    }
   }
 
   private async hasOpenLead (contact, exclude_id?: string) {
@@ -154,7 +186,7 @@ class LeadService {
         return responseUtility.error('lead.validation', null, { code: 400, fields })
       }
 
-      const adviser = await this.findAdviser(_params.user_logged)
+      const adviser = await thirdService.findByUser(_params.user_logged)
       if (!adviser) return responseUtility.error('third.not_found')
 
       // Un asesor solo puede editar sus propios leads
@@ -184,6 +216,7 @@ class LeadService {
       }
 
       const lead = await this.save({ ...data, ...extra, contact, adviser: adviser._id })
+      if (!data._id) this.notifyAdviser('lead_created', lead._id)
 
       return responseUtility.success({
         object: lead
@@ -321,6 +354,7 @@ class LeadService {
             }
           })
         }
+        this.notifyAdviser('lead_again', lead._id)
       } else {
         lead = await this.save({
           ...data,
@@ -329,6 +363,7 @@ class LeadService {
           adnetwork: adnetwork._id,
           campaign: campaign._id,
         })
+        this.notifyAdviser('lead_created', lead._id)
       }
 
       create_interaction._ref.lead = lead._id
@@ -348,7 +383,7 @@ class LeadService {
     try{
       const where:any = {}
 
-      const third = await this.findAdviser(_params.user_logged)
+      const third = await thirdService.findByUser(_params.user_logged)
       if(third) where.adviser = third._id
 
       if (typeof _params.filters === 'string' && _params.filters.trim() !== '') {
@@ -360,23 +395,8 @@ class LeadService {
         ]
       }
 
-      let leads = await Lead.find(where)
+      let leads = await this.withSummary(Lead.find(where))
       .sort({created_at:-1})
-      .populate({
-        path: 'contact',
-        select: 'first_name last_name document_type document number',
-        options: { lean:true }
-      })
-      .populate({
-        path: 'interestProgram',
-        select: 'name',
-        options: { lean:true }
-      })
-      .populate({
-        path: 'adnetwork',
-        select: 'name',
-        options: { lean:true }
-      })
       .limit(100)
       .lean()
 
@@ -400,7 +420,7 @@ class LeadService {
   public async stats (_params) {
     try{
       const match: any = { deleted: { $ne: true } }
-      const third = await this.findAdviser(_params.user_logged)
+      const third = await thirdService.findByUser(_params.user_logged)
       if(third) match.adviser = third._id
 
       const [total, last_week, by_status, by_program, recent] = await Promise.all([
@@ -445,7 +465,7 @@ class LeadService {
 
       // Mismo criterio que list: el asesor solo ve sus leads
       const where: any = { _id: _params._id }
-      const third = await this.findAdviser(_params.user_logged)
+      const third = await thirdService.findByUser(_params.user_logged)
       if (third) where.adviser = third._id
 
       const lead = await Lead.findOne(where)

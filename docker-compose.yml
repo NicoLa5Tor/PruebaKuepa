@@ -12,6 +12,16 @@ services:
       timeout: 5s
       retries: 5
 
+  # Pub/sub del adaptador de Socket.IO: no guarda datos, por eso no lleva volumen
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   back:
     build: ./back
     restart: unless-stopped
@@ -22,10 +32,13 @@ services:
     # Estas tienen prioridad sobre env_file: dentro de Docker Mongo es el servicio "mongo"
     environment:
       MONGO_URI: mongodb://mongo:27017/kuepa_test
+      REDIS_URL: redis://redis:6379
       PORT: 7001
       PUBLIC_URL: http://localhost:7001
     depends_on:
       mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   front:

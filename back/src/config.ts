@@ -15,6 +15,12 @@ export default {
       dev: {
         uri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/kuepa_test?retryWrites=true&w=majority&appName=Test'
       }
+    },
+    // Opcional: sin Redis, Socket.IO funciona en una sola instancia
+    redis:{
+      dev: {
+        uri: process.env.REDIS_URL
+      }
     }
   },
   jwt: process.env.JWT_SECRET,

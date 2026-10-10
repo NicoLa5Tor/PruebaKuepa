@@ -1,4 +1,5 @@
 // @import_models
+import { NotificationModel } from '@app/models/notificationModel'
 
 import { RoleModel } from '@app/models/roleModel'
 import { PermissionModel } from '@app/models/permissionModel'
@@ -15,6 +16,7 @@ import { ProgramModel } from '@app/models/programModel'
 
 // @export_models
 export {
+  NotificationModel as Notification,
   RoleModel as Role,
   PermissionModel as Permission,
   LeadModel as Lead,

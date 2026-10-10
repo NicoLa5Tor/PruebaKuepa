@@ -6,6 +6,7 @@ import { Routes } from "@app/router"
 import config from 'config'
 import { request as request_mw } from "@app/middleware/requestMiddleware"
 import { DataBaseUtility } from "@core/utilities/dataBaseUtility"
+import { socketUtility } from "@core/utilities/socketUtility"
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -52,6 +53,7 @@ class App {
     const PORT:string = global.env.port || 5000
     this.routes.init()
     const server  = this.app.listen(PORT, console.log(`Server running  ${PORT}`))
+    socketUtility.init(server)
   }
 
 }
