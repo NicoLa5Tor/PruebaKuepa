@@ -2,6 +2,7 @@ import moment from 'moment'
 import { TbUserSearch } from 'react-icons/tb'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 import { ILead } from '@/services/leadService'
 import { LeadStatusBadge } from './lead-status'
 
@@ -9,9 +10,11 @@ export interface LeadsTableProps {
   leads: ILead[]
   loading?: boolean
   emptyMessage?: string
+  // Fila recién llegada en tiempo real, se resalta brevemente
+  highlightId?: string | null
 }
 
-export function LeadsTable({ leads, loading, emptyMessage = 'Todavía no hay leads registrados.' }: LeadsTableProps) {
+export function LeadsTable({ leads, loading, highlightId, emptyMessage = 'Todavía no hay leads registrados.' }: LeadsTableProps) {
   if (loading) {
     return (
       <div className="flex flex-col gap-2">
@@ -44,7 +47,7 @@ export function LeadsTable({ leads, loading, emptyMessage = 'Todavía no hay lea
       </TableHeader>
       <TableBody>
         {leads.map((lead) => (
-          <TableRow key={lead._id}>
+          <TableRow key={lead._id} className={cn('transition-colors duration-1000', lead._id === highlightId && 'bg-purple-100')}>
             <TableCell className="font-medium text-slate-800">{lead.full_name}</TableCell>
             <TableCell className="hidden lg:table-cell text-slate-600">
               <span className="uppercase text-xs text-slate-400 mr-1">{lead.contact?.document_type}</span>

@@ -9,7 +9,8 @@ import { Separator } from '../ui/separator';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '../ui/breadcrumb';
 import { useStore } from '@nanostores/react';
 import { Button } from '../ui/button';
-import { TbArrowBack, TbBell,  TbLayoutSidebarRightFilled } from 'react-icons/tb';
+import { TbArrowBack, TbLayoutSidebarRightFilled } from 'react-icons/tb';
+import { Notifications } from '../notifications';
 import { useSearchParams } from 'react-router-dom';
 import { decodeBase64UrlSafe } from '@/util/utils';
 
@@ -87,10 +88,7 @@ export function AppLayout(props: AppLayoutProps) {
                   </Breadcrumb>
                 </div>
                 <div className="flex grow justify-end items-center">
-                  <Button to={ searchParams.has('back') ? decodeBase64UrlSafe(searchParams.get('back')) : $app?.back } variant="ghost"  size="icon" className="flex h-7 w-7">
-                    <TbBell className="h-4 w-4" />
-                    <span className="sr-only">Back</span>
-                  </Button>
+                  <Notifications />
                   <Separator orientation="vertical" className="mr-2 h-4" />
 
                   <Button to={ searchParams.has('back') ? decodeBase64UrlSafe(searchParams.get('back')) : $app?.back } variant="ghost"  size="icon" className="flex h-7 w-10 pe-3">

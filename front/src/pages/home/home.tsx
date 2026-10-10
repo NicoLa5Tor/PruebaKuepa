@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LeadStatusBadge } from "@/components/leads/lead-status"
 import { ILeadStats, leadService } from "@/services/leadService"
+import { useSocketEvent } from "@/hooks/use-socket-event"
 
 export interface HomeProps {
 }
@@ -39,11 +40,17 @@ export default function Home (props?: HomeProps) {
         }
       ]
     })
-    leadService.stats().then((response) => {
-      if (response?.code === 200) setStats(response)
-      setLoading(false)
-    })
+    loadStats()
   }, [])
+
+  const loadStats = async () => {
+    const response = await leadService.stats()
+    if (response?.code === 200) setStats(response)
+    setLoading(false)
+  }
+
+  // Las métricas se recalculan en el back cada vez que entra un lead
+  useSocketEvent('lead:created', loadStats)
 
   const sold = stats?.by_status.find((_s) => _s.status === 'sold')?.total || 0
   const topProgram = stats?.by_program[0]

@@ -11,7 +11,8 @@ import '@mantine/core/styles.css';
 
 import i18n from './util/i18n';
 import moment from 'moment';
-import 'moment/locale/es';
+// La ruta dist comparte la instancia ESM de moment que usa Vite; 'moment/locale/es' registra el idioma en otra copia
+import 'moment/dist/locale/es';
 
 moment.locale('es');
 

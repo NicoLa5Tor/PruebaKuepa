@@ -3,6 +3,7 @@ import { persistentAtom } from '@nanostores/persistent'
 import moment from 'moment'
 import { atom } from 'nanostores'
 import { nanoid } from 'nanoid'
+import type { INotification } from '@/services/notificationService'
 
 const user = persistentAtom(`kuepa:1.0:context:user`,null, {
   encode: JSON.stringify,
@@ -111,4 +112,7 @@ const can = (what:string) =>{
 
 const loading = atom(false) 
 
-export { token, user, loading,access, can, theme, app, attendance, device, booking, toggleFavorites, toggleRecent, unToggleRecent }
+// La fuente de verdad es el back: se carga al entrar y se actualiza por socket
+const notifications = atom<{ list: INotification[], unread: number }>({ list: [], unread: 0 })
+
+export { token, user, loading,access, can, theme, app, attendance, device, booking, notifications, toggleFavorites, toggleRecent, unToggleRecent }

@@ -1,5 +1,6 @@
 import { access, token, user } from "../atoms/kuepa"
 import { post } from "../util/http"
+import { disconnectSocket } from "../util/socket"
 const API = '/auth'
 
 export class AuthService {
@@ -31,6 +32,7 @@ export class AuthService {
   }
 
   public async logout ()  {
+    disconnectSocket()
     user.set(null)
     token.set(null)
     

@@ -152,15 +152,18 @@ class LeadService {
   })
 
   /**
-  * Avisa al asesor en tiempo real. Se llama con el lead ya guardado y sin await:
+  * Publica el lead al asesor en tiempo real. Se llama con el lead ya guardado y sin await:
   * si falla (Redis, socket) solo se registra, nunca rompe el registro del lead.
+  * - event: emite lead:created para refrescar tablas y métricas abiertas.
+  * - notification: además la guarda para la campana; solo aplica cuando el lead
+  *   no lo creó el propio asesor (llega por el formulario público).
   */
-  private async notifyAdviser (type: NotificationType, lead_id) {
+  private async publishLead (lead_id, { event = false, notification }: { event?: boolean, notification?: NotificationType }) {
     try{
       const lead = await this.withSummary(Lead.findOne({ _id: lead_id })).lean()
       if (!lead?.adviser) return
-      if (type === 'lead_created') socketUtility.emitToAdviser(lead.adviser, 'lead:created', lead)
-      await notificationService.create({ adviser: lead.adviser, type, lead })
+      if (event) socketUtility.emitToAdviser(lead.adviser, 'lead:created', lead)
+      if (notification) await notificationService.create({ adviser: lead.adviser, type: notification, lead })
     } catch (error) {
       console.log('error', error)
     }
@@ -216,7 +219,7 @@ class LeadService {
       }
 
       const lead = await this.save({ ...data, ...extra, contact, adviser: adviser._id })
-      if (!data._id) this.notifyAdviser('lead_created', lead._id)
+      if (!data._id) this.publishLead(lead._id, { event: true })
 
       return responseUtility.success({
         object: lead
@@ -354,7 +357,7 @@ class LeadService {
             }
           })
         }
-        this.notifyAdviser('lead_again', lead._id)
+        this.publishLead(lead._id, { notification: 'lead_again' })
       } else {
         lead = await this.save({
           ...data,
@@ -363,7 +366,7 @@ class LeadService {
           adnetwork: adnetwork._id,
           campaign: campaign._id,
         })
-        this.notifyAdviser('lead_created', lead._id)
+        this.publishLead(lead._id, { event: true, notification: 'lead_created' })
       }
 
       create_interaction._ref.lead = lead._id

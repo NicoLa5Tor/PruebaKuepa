@@ -10,6 +10,7 @@ import { toast } from "@/components/hooks/use-toast"
 import { LeadForm } from "@/components/leads/lead-form"
 import { LeadsTable } from "@/components/leads/leads-table"
 import { ILead, leadService } from "@/services/leadService"
+import { useSocketEvent } from "@/hooks/use-socket-event"
 
 export interface LeadsProps {
 }
@@ -19,6 +20,7 @@ export default function Leads (props?: LeadsProps) {
   const [leads, setLeads] = useState<ILead[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [highlightId, setHighlightId] = useState<string | null>(null)
   // /leads?new=1 abre el formulario directamente (acceso rápido desde el Home)
   const [open, setOpen] = useState(searchParams.get('new') === '1')
 
@@ -51,6 +53,20 @@ export default function Leads (props?: LeadsProps) {
     const timeout = setTimeout(() => load(search), 300)
     return () => clearTimeout(timeout)
   }, [search, load])
+
+  // Lead nuevo en tiempo real (formulario público u otra pestaña). Con una búsqueda
+  // activa no se inserta para no mostrar algo que quizá no coincide con el filtro
+  useSocketEvent<ILead>('lead:created', (lead) => {
+    if (search) return
+    setLeads((current) => current.some((item) => item._id === lead._id) ? current : [lead, ...current])
+    setHighlightId(lead._id)
+  })
+
+  useEffect(() => {
+    if (!highlightId) return
+    const timeout = setTimeout(() => setHighlightId(null), 3000)
+    return () => clearTimeout(timeout)
+  }, [highlightId])
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value)
@@ -95,6 +111,7 @@ export default function Leads (props?: LeadsProps) {
           <LeadsTable
             leads={leads}
             loading={loading}
+            highlightId={highlightId}
             emptyMessage={search ? 'No hay leads que coincidan con la búsqueda.' : 'Todavía no hay leads registrados.'}
           />
         </CardContent>
