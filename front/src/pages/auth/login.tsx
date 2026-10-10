@@ -1,11 +1,12 @@
 // bg-orange-400 bg-red-500 hover:text-orange-400 hover:text-red-500 bg-orange-500 hover:text-orange-500
 
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { useStore } from "@nanostores/react"
 import { access,  token, user } from "@/atoms/kuepa"
 import { AuthService } from "@/services/authService"
 import { FormEvent, useEffect, useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { hasSession } from "@/util/session"
 
 
 
@@ -14,6 +15,8 @@ function Login () {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const location = useNavigate();
+  // Ruta protegida a la que se intentó entrar antes de pedir login
+  const from = (useLocation().state as { from?: string } | null)?.from || '/home'
 
   const [loading, setLoading] = useState(false)
 
@@ -48,9 +51,9 @@ function Login () {
     if(_token){
       init()
     }
-    if(token.get() && access.get() && user.get()){
+    if(hasSession() && access.get()){
       setTimeout(()=>{
-        location(`/home`)
+        location(from)
       },1000)
     } 
   },[_token, $token])
@@ -73,7 +76,7 @@ function Login () {
           can: can
         })
       }
-      location(`/home`)
+      location(from)
     } else {
       setError('Usuario o contraseña incorrectos')
     }
@@ -84,7 +87,7 @@ function Login () {
   return (
     <>
       {
-        $token && $access && $user ? 
+        $token && $access && $user && hasSession() ? 
           <div className="flex w-[100vw] h-[100vh] items-center justify-center">
             <div className="z-20 flex items-center text-4xl bg-white w-fit px-4 py-2 rounded-md font-bold">
               <img src="/logo.jpeg" alt="logo" className="w-36 h-36 mr-2 animate-bounce" />

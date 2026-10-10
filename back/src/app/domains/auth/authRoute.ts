@@ -28,7 +28,7 @@ class AuthRoute {
   private routes: Array<IRouteParams> = [
     // @routes
     { method: 'post', path: '/login', handler: this.controller.login , middleware: [] },
-    { method: 'post', path: '/register', handler: this.controller.register , middleware: [] },
+    { method: 'post', path: '/register', handler: this.controller.register , middleware: [auth] },
   ] 
 
   public init () {

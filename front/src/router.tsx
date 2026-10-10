@@ -5,6 +5,7 @@ import NotFound from '@/pages/not-found/not-found';
 import { Skeleton } from "./components/ui/skeleton";
 import Leads from './pages/leads/leads';
 import { AppLayout } from './components/layouts/app-layout';
+import { RequireAuth } from './components/require-auth';
 import Home from './pages/home/home';
 
 const Login = lazy(() => import('@/pages/auth/login')); 
@@ -26,25 +27,32 @@ const router = createBrowserRouter([
   {
     path: '/leads',
     element: 
-      <AppLayout module="crm" window="contact">
-        <Suspense fallback={<Loading mode="logo" />}>
-          <Leads />
-        </Suspense>
-      </AppLayout>
+      <RequireAuth>
+        <AppLayout module="crm" window="contact">
+          <Suspense fallback={<Loading mode="logo" />}>
+            <Leads />
+          </Suspense>
+        </AppLayout>
+      </RequireAuth>
   },
   {
     path: '/home',
     element: 
-      <AppLayout module="crm" window="contact">
-        <Suspense fallback={<Loading mode="logo" />}>
-          <Home />
-        </Suspense>
-      </AppLayout>
+      <RequireAuth>
+        <AppLayout module="crm" window="contact">
+          <Suspense fallback={<Loading mode="logo" />}>
+            <Home />
+          </Suspense>
+        </AppLayout>
+      </RequireAuth>
   },
   {
     path: "*",
     element: 
-      <NotFound />
+      // NotFound renderiza el AppLayout completo, así que también va protegido
+      <RequireAuth>
+        <NotFound />
+      </RequireAuth>
   }
 ]);
 
