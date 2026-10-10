@@ -1,26 +1,34 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { TbCircleCheck, TbClock, TbHeadset, TbSchool } from "react-icons/tb"
+import { IconType } from "react-icons"
+import { TbCertificate, TbCircleCheck, TbClock, TbDeviceLaptop, TbHeadset, TbSchool } from "react-icons/tb"
 import { LeadForm } from "@/components/leads/lead-form"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useSetting } from "@/hooks/use-setting"
+import { IInscriptionPage } from "@/services/globalService"
 import { ILeadInput, leadService } from "@/services/leadService"
+
+// Lista blanca de íconos que puede nombrar la configuración de la página
+const ICONS: Record<string, IconType> = {
+  school: TbSchool,
+  clock: TbClock,
+  headset: TbHeadset,
+  laptop: TbDeviceLaptop,
+  certificate: TbCertificate,
+}
 
 // Página pública: un prospecto deja sus datos y llega al CRM como lead orgánico
 function Inscription () {
   const [name, setName] = useState('')
   const [registered, setRegistered] = useState(false)
+  const { value: page, loading } = useSetting<IInscriptionPage>('inscription_page')
 
   // El endpoint público no devuelve datos, así que el nombre se toma de lo enviado
   const handleSubmit = (data: ILeadInput) => {
     setName(data.first_name.trim().split(' ')[0])
     return leadService.external(data)
   }
-
-  const benefits = [
-    { icon: TbSchool, text: 'Programas técnicos y bachillerato con enfoque práctico' },
-    { icon: TbClock, text: 'Estudia a tu ritmo, 100% virtual' },
-    { icon: TbHeadset, text: 'Un asesor te acompaña en todo el proceso' },
-  ]
 
   return (
     <div className="min-h-screen w-full grid lg:grid-cols-2">
@@ -29,15 +37,27 @@ function Inscription () {
           <img src="/logo.jpeg" alt="Kuepa" className="w-28 h-28" />
         </Link>
         <div className="flex flex-col gap-6 max-w-md">
-          <h1 className="text-4xl font-bold leading-tight">Da el siguiente paso en tu educación</h1>
-          <ul className="flex flex-col gap-4">
-            {benefits.map((benefit) => (
-              <li key={benefit.text} className="flex items-center gap-3 text-orange-50">
-                <benefit.icon className="h-6 w-6 shrink-0 text-orange-300" />
-                <span>{benefit.text}</span>
-              </li>
-            ))}
-          </ul>
+          {loading ? (
+            <>
+              <Skeleton className="h-20 w-full bg-orange-800" />
+              <Skeleton className="h-24 w-full bg-orange-800" />
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl font-bold leading-tight">{page?.heading}</h1>
+              <ul className="flex flex-col gap-4">
+                {page?.benefits?.map((benefit) => {
+                  const Icon = ICONS[benefit.icon]
+                  return (
+                    <li key={benefit.text} className="flex items-center gap-3 text-orange-50">
+                      {Icon ? <Icon className="h-6 w-6 shrink-0 text-orange-300" /> : null}
+                      <span>{benefit.text}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
         </div>
         <span className="text-xs text-orange-200">kuepa EduTech</span>
       </div>
@@ -62,7 +82,7 @@ function Inscription () {
             <>
               <span className="flex text-5xl mb-2 font-extrabold bg-gradient-to-r from-orange-400 via-orange-600 to-orange-400 text-transparent bg-clip-text animate-gradient">kuepa</span>
               <h2 className="text-2xl font-semibold text-orange-900">Quiero más información</h2>
-              <p className="text-sm text-slate-500 mb-6">Déjanos tus datos y un asesor te contactará.</p>
+              <p className="text-sm text-slate-500 mb-6">{page?.description}</p>
               <LeadForm
                 accent="orange"
                 submitLabel="Quiero que me contacten"

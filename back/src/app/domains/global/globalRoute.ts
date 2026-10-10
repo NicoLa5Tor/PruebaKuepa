@@ -28,7 +28,8 @@ class GlobalRoute {
   
   private routes: Array<IRouteParams> = [
     // @routes
-    { method: 'post', path: '/test', handler: this.controller.test , middleware: [] },
+    // público: solo sirve configuraciones marcadas como public
+    { method: 'get', path: '/setting/:key', handler: this.controller.setting , middleware: [] },
   ] 
 
   public init () {

@@ -7,18 +7,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { FieldError, ILeadInput } from '@/services/leadService'
 import { IProgram, programService } from '@/services/programService'
-
-// El back también acepta 'nt' (NIT), pero un prospecto siempre es una persona natural
-const DOCUMENT_TYPES = [
-  { value: 'cc', label: 'Cédula de ciudadanía' },
-  { value: 'ti', label: 'Tarjeta de identidad' },
-  { value: 'pp', label: 'Pasaporte' },
-]
+import { IDocumentType } from '@/services/globalService'
+import { useSetting } from '@/hooks/use-setting'
 
 const EMPTY: ILeadInput = {
   first_name: '',
   last_name: '',
-  document_type: 'cc',
+  // Se completa con el primer tipo configurado en la base
+  document_type: '',
   document: '',
   email: '',
   mobile_phone: '',
@@ -71,10 +67,17 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
   const [general, setGeneral] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [programs, setPrograms] = useState<IProgram[]>([])
+  const { value: documentTypes, loading: loadingSettings } = useSetting<IDocumentType[]>('document_types')
+
+  const defaultDocumentType = documentTypes?.[0]?.value || ''
 
   useEffect(() => {
     programService.list().then((response) => setPrograms(response?.list || []))
   }, [])
+
+  useEffect(() => {
+    if (defaultDocumentType) setData((current) => current.document_type ? current : { ...current, document_type: defaultDocumentType })
+  }, [defaultDocumentType])
 
   const set = (field: keyof ILeadInput) => (value: string) => {
     setData((current) => ({ ...current, [field]: value }))
@@ -94,7 +97,7 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
     setLoading(false)
 
     if (response?.code === 200) {
-      setData(EMPTY)
+      setData({ ...EMPTY, document_type: defaultDocumentType })
       onSuccess?.(response)
     } else if (response?.fields) {
       setErrors(response.fields)
@@ -134,6 +137,11 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
           <AlertDescription>{general}</AlertDescription>
         </Alert>
       ) : null}
+      {!loadingSettings && !documentTypes?.length ? (
+        <Alert variant="destructive" className="sm:col-span-2">
+          <AlertDescription>No pudimos cargar la configuración del formulario. Intenta más tarde.</AlertDescription>
+        </Alert>
+      ) : null}
 
       {field('first_name', 'Nombres', <Input {...inputProps('first_name')} autoComplete="given-name" autoFocus />)}
       {field('last_name', 'Apellidos', <Input {...inputProps('last_name')} autoComplete="family-name" />)}
@@ -144,7 +152,7 @@ export function LeadForm({ onSubmit, onSuccess, submitLabel = 'Guardar lead', ac
             <SelectValue placeholder="Selecciona" />
           </SelectTrigger>
           <SelectContent>
-            {DOCUMENT_TYPES.map((type) => (
+            {(documentTypes || []).map((type) => (
               <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
             ))}
           </SelectContent>

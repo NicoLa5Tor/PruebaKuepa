@@ -12,7 +12,7 @@ Copia `back/.env.example` a `back/.env` y define `JWT_SECRET` y `SEED_ADMIN_PASS
 cp back/.env.example back/.env
 docker compose up -d --build
 docker compose exec back npm run cli -- --seeder initSeeder -f   # usuario de prueba
-docker compose exec back npm run cli -- --seeder crmSeeder -f    # programas, asesor, canales y campaña
+docker compose exec back npm run cli -- --seeder crmSeeder -f    # programas, asesor, canales, campaña y configuración
 ```
 
 | Servicio | URL |
@@ -47,6 +47,14 @@ Reglas de negocio:
 - No se permite un segundo lead abierto para la misma persona (`409`).
 - Cada asesor solo ve y edita sus propios leads.
 - El endpoint público nunca modifica contactos existentes.
+
+### Datos configurables
+Los datos que muestran los formularios no están en el código: viven en la colección `settings` y se sirven por `GET /api/global/setting/:key` (solo las marcadas como públicas).
+- `document_types`: tipos de documento del formulario. El back valida contra esta misma lista.
+- `inscription_page`: título, descripción y beneficios de `/inscripcion`.
+- Los programas vienen de la colección `programs` (`GET /api/program`).
+
+El `crmSeeder` carga los valores iniciales; sin él el formulario no puede registrar leads.
 
 ### Dashboard (`/home`)
 Métricas calculadas en Mongo (totales, últimos 7 días, por programa y por estado), últimos registros y accesos rápidos.

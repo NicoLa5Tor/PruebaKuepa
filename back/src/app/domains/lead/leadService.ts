@@ -5,6 +5,7 @@ import moment from "moment"
 // @import_services
 import { thirdService } from "@app/domains/third/thirdService"
 import { notificationService } from "@app/domains/notification/notificationService"
+import { globalService } from "@app/domains/global/globalService"
 
 // @import_models
 import { Lead, Campaign, Third, Adnetwork, Tracking, Message, Interaction, Program } from "@app/models"
@@ -28,8 +29,6 @@ export interface ILeadInput {
 
 type IFieldErrors = Record<string, 'required' | 'invalid' | 'not_found'>
 
-// Mismo enum que document_type en thirdModel
-const DOCUMENT_TYPES = ['cc', 'ti', 'pp', 'nt']
 const OPEN_STATUSES = ['active', 'grading']
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 const PHONE_REGEX = /^\+?\d{7,15}$/
@@ -68,7 +67,10 @@ class LeadService {
 
     if (data.email && !EMAIL_REGEX.test(data.email)) fields.email = 'invalid'
     if (data.mobile_phone && !PHONE_REGEX.test(data.mobile_phone)) fields.mobile_phone = 'invalid'
-    if (data.document_type && !DOCUMENT_TYPES.includes(data.document_type)) fields.document_type = 'invalid'
+    // Tipos permitidos: la misma lista configurada en Mongo que muestra el formulario
+    const document_types = await globalService.getSetting('document_types')
+    if (!Array.isArray(document_types)) throw new Error('setting document_types no configurado')
+    if (data.document_type && !document_types.some((_t) => _t.value === data.document_type)) fields.document_type = 'invalid'
     if (data.document && !DOCUMENT_REGEX.test(data.document)) fields.document = 'invalid'
     if (data._id && !mongoose.isValidObjectId(data._id)) fields._id = 'invalid'
 

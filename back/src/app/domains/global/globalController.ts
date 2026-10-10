@@ -20,9 +20,9 @@ class GlobalController {
 
   constructor () {}
 
-  public test = async(req: Request, res: Response) => {
+  public setting = async(req: Request, res: Response) => {
     const _params = req._data()
-    const response = await this.service.test(_params)
+    const response = await this.service.setting(_params)
     return responseUtility.build(res, response)
   }
 }

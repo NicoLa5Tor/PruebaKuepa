@@ -15,6 +15,10 @@ export const errors = {
   notification: {
     error: { code: 500 },
   },
+  setting: {
+    not_found: { code: 404 },
+    error: { code: 500 },
+  },
   campaign: {
     not_found: { code: 404 },
   },

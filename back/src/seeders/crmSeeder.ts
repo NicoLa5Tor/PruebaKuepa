@@ -1,4 +1,4 @@
-import { Adnetwork, Campaign, Program, Third, Tracking, User } from '@app/models'
+import { Adnetwork, Campaign, Program, Setting, Third, Tracking, User } from '@app/models'
 import { IConsole } from '@client/client'
 
 const programs = [
@@ -9,11 +9,43 @@ const programs = [
   { name: 'Bachillerato Acelerado', description: 'Termina el bachillerato en menos tiempo' },
 ]
 
+// Datos que muestra la app (formulario y página de inscripción), servidos por /api/global/setting/:key
+const settings = [
+  {
+    key: 'document_types',
+    public: true,
+    description: 'Tipos de documento del prospecto; el primero es el valor por defecto',
+    value: [
+      { value: 'cc', label: 'Cédula de ciudadanía' },
+      { value: 'ti', label: 'Tarjeta de identidad' },
+      { value: 'pp', label: 'Pasaporte' },
+    ],
+  },
+  {
+    key: 'inscription_page',
+    public: true,
+    description: 'Contenido de la página pública de inscripción',
+    value: {
+      heading: 'Da el siguiente paso en tu educación',
+      description: 'Déjanos tus datos y un asesor te contactará.',
+      benefits: [
+        { icon: 'school', text: 'Programas técnicos y bachillerato con enfoque práctico' },
+        { icon: 'clock', text: 'Estudia a tu ritmo, 100% virtual' },
+        { icon: 'headset', text: 'Un asesor te acompaña en todo el proceso' },
+      ],
+    },
+  },
+]
+
 // Idempotente: se puede correr varias veces con -f sin duplicar datos
 const upsert = (model, where, data) => model.findOneAndUpdate(where, { $set: data }, { upsert: true, new: true, lean: true })
 
 export const run = async(_params, console:IConsole) => {
   try{
+    for (const setting of settings) {
+      await upsert(Setting, { key: setting.key }, setting)
+    }
+
     for (const program of programs) {
       await upsert(Program, { name: program.name }, { ...program, status: 'active' })
     }
