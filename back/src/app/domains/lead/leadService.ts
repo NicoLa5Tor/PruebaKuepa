@@ -25,11 +25,13 @@ export interface ILeadInput {
   interestProgram?: string
   document_type?: string
   document?: string
+  status?: string
 }
 
 type IFieldErrors = Record<string, 'required' | 'invalid' | 'not_found'>
 
 const OPEN_STATUSES = ['active', 'grading']
+const CONTACT_CHANNELS = ['whatsapp', 'email']
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 const PHONE_REGEX = /^\+?\d{7,15}$/
 const DOCUMENT_REGEX = /^[a-zA-Z0-9]{4,20}$/
@@ -54,7 +56,11 @@ class LeadService {
       document_type: text(_params.document_type)?.toLowerCase(),
       document: text(_params.document)?.replace(/[\s.]/g, ''),
     }
-    if (_params._id) data._id = _params._id
+    if (_params._id) {
+      data._id = _params._id
+      // El estado solo se cambia al editar; un lead nuevo siempre nace 'active'
+      if (_params.status !== undefined) data.status = text(_params.status)
+    }
     return data
   }
 
@@ -70,9 +76,10 @@ class LeadService {
     // Tipos permitidos: la misma lista configurada en Mongo que muestra el formulario
     const document_types = await globalService.getSetting('document_types')
     if (!Array.isArray(document_types)) throw new Error('setting document_types no configurado')
-    if (data.document_type && !document_types.some((_t) => _t.value === data.document_type)) fields.document_type = 'invalid'
+    if (data.document_type && !document_types.some((_t) => _t.active && _t.value === data.document_type)) fields.document_type = 'invalid'
     if (data.document && !DOCUMENT_REGEX.test(data.document)) fields.document = 'invalid'
     if (data._id && !mongoose.isValidObjectId(data._id)) fields._id = 'invalid'
+    if (data.status !== undefined && !Lead.schema.path('status').options.enum.includes(data.status)) fields.status = 'invalid'
 
     if (data.interestProgram) {
       if (!mongoose.isValidObjectId(data.interestProgram)) {
@@ -382,6 +389,98 @@ class LeadService {
       console.log('error', error)
       return responseUtility.error('lead.error')
     }
+  }
+
+  // Borrado suave (mongoose-delete): solo el asesor dueño puede eliminar su lead
+  public async delete (_params) {
+    try{
+      const adviser = await thirdService.findByUser(_params.user_logged)
+      if (!adviser) return responseUtility.error('third.not_found')
+      if (!mongoose.isValidObjectId(_params._id)) return responseUtility.error('lead.not_found')
+
+      const lead = await Lead.exists({ _id: _params._id, adviser: adviser._id })
+      if (!lead) return responseUtility.error('lead.not_found')
+
+      await Lead.delete({ _id: lead._id })
+      return responseUtility.success({
+        deleted: true
+      })
+    } catch (error) {
+      console.log('error', error)
+      return responseUtility.error('lead.error')
+    }
+  }
+
+  /**
+  * Registra el contacto con el lead y devuelve el link para abrir WhatsApp o el correo.
+  * El mensaje sale de la configuración contact_templates; contactar un lead nuevo
+  * lo pasa a 'grading' (en gestión).
+  */
+  public async contact (_params) {
+    try{
+      if (!CONTACT_CHANNELS.includes(_params.channel)) return responseUtility.error('lead.contact_channel')
+
+      const adviser = await thirdService.findByUser(_params.user_logged)
+      if (!adviser) return responseUtility.error('third.not_found')
+      if (!mongoose.isValidObjectId(_params._id)) return responseUtility.error('lead.not_found')
+
+      const lead = await this.withSummary(Lead.findOne({ _id: _params._id, adviser: adviser._id })).lean()
+      if (!lead) return responseUtility.error('lead.not_found')
+
+      const templates = await globalService.getSetting('contact_templates')
+      if (!templates) throw new Error('setting contact_templates no configurado')
+
+      const variables = {
+        first_name: lead.first_name,
+        program: lead.interestProgram?.name || '',
+        adviser: adviser.first_name || adviser.name || '',
+      }
+      const url = _params.channel === 'whatsapp'
+        ? this.whatsappUrl(lead.mobile_phone, templates, variables)
+        : this.emailUrl(lead.email, templates, variables)
+
+      await Interaction.create({
+        target: 'human',
+        source: 'human',
+        type: _params.channel,
+        status: 'ended',
+        number: lead.mobile_phone,
+        _ref: {
+          lead: lead._id,
+          contact: lead.contact?._id,
+          adviser: adviser._id,
+        }
+      })
+
+      const status = lead.status === 'active' ? 'grading' : lead.status
+      if (status !== lead.status) await Lead.updateOne({ _id: lead._id }, { $set: { status } })
+
+      return responseUtility.success({
+        url,
+        status
+      })
+    } catch (error) {
+      console.log('error', error)
+      return responseUtility.error('lead.error')
+    }
+  }
+
+  // Reemplaza {variable} por su valor; las variables desconocidas se dejan tal cual
+  private fillTemplate (template: string, variables: Record<string, string>) {
+    return `${template || ''}`.replace(/\{(\w+)\}/g, (match, key) => variables[key] ?? match)
+  }
+
+  private whatsappUrl (mobile_phone: string, templates, variables) {
+    // wa.me exige el número con indicativo y sin '+'
+    const number = mobile_phone.startsWith('+') ? mobile_phone.slice(1) : `${templates.country_code}${mobile_phone}`
+    const text = this.fillTemplate(templates.whatsapp, variables)
+    return `https://wa.me/${number}?text=${encodeURIComponent(text)}`
+  }
+
+  private emailUrl (email: string, templates, variables) {
+    const subject = this.fillTemplate(templates.email?.subject, variables)
+    const body = this.fillTemplate(templates.email?.body, variables)
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
   public async list (_params) {

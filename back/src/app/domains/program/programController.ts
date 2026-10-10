@@ -25,6 +25,21 @@ class ProgramController {
     const response = await this.service.list(_params)
     return responseUtility.build(res, response)
   }
+
+  public all = async(req: Request, res: Response) => {
+    const response = await this.service.all(req._data())
+    return responseUtility.build(res, response)
+  }
+
+  public upsert = async(req: Request, res: Response) => {
+    const response = await this.service.upsert(req._data())
+    return responseUtility.build(res, response)
+  }
+
+  public delete = async(req: Request, res: Response) => {
+    const response = await this.service.delete(req._data())
+    return responseUtility.build(res, response)
+  }
   
 }
 

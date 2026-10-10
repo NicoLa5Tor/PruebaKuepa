@@ -45,6 +45,16 @@ class LeadController {
     return responseUtility.build(res, response)
   }
 
+  public delete = async(req: Request, res: Response) => {
+    const response = await this.service.delete(this.params(req))
+    return responseUtility.build(res, response)
+  }
+
+  public contact = async(req: Request, res: Response) => {
+    const response = await this.service.contact(this.params(req))
+    return responseUtility.build(res, response)
+  }
+
   public stats = async(req: Request, res: Response) => {
     const response = await this.service.stats(this.params(req))
     return responseUtility.build(res, response)

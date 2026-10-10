@@ -30,6 +30,9 @@ class ProgramRoute {
     // @routes
     // público: el catálogo lo usa también el formulario de inscripción
     { method: 'get', path: '/', handler: this.controller.list , middleware: [] },
+    { method: 'get', path: '/all', handler: this.controller.all , middleware: [auth] },
+    { method: 'post', path: '/upsert', handler: this.controller.upsert , middleware: [auth] },
+    { method: 'post', path: '/delete', handler: this.controller.delete , middleware: [auth] },
   ] 
 
   public init () {

@@ -32,6 +32,8 @@ class LeadRoute {
     { method: 'get', path: '/stats', handler: this.controller.stats , middleware: [auth] },
     { method: 'get', path: '/', handler: this.controller.list , middleware: [auth] },
     { method: 'post', path: '/upsert', handler: this.controller.upsert , middleware: [auth] },
+    { method: 'post', path: '/delete', handler: this.controller.delete , middleware: [auth] },
+    { method: 'post', path: '/contact', handler: this.controller.contact , middleware: [auth] },
     // público: lo usa el formulario de inscripción para clientes
     { method: 'post', path: '/external', handler: this.controller.external , middleware: [] },
     { method: 'post', path: '/adviser-info', handler: this.controller.adviserInfo , middleware: [auth] },

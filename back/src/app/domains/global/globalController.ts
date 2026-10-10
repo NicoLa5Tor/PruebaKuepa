@@ -25,6 +25,16 @@ class GlobalController {
     const response = await this.service.setting(_params)
     return responseUtility.build(res, response)
   }
+
+  public get = async(req: Request, res: Response) => {
+    const response = await this.service.get(req._data())
+    return responseUtility.build(res, response)
+  }
+
+  public update = async(req: Request, res: Response) => {
+    const response = await this.service.update(req._data())
+    return responseUtility.build(res, response)
+  }
 }
 
 

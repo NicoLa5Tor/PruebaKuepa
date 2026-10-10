@@ -16,9 +16,10 @@ const settings = [
     public: true,
     description: 'Tipos de documento del prospecto; el primero es el valor por defecto',
     value: [
-      { value: 'cc', label: 'Cédula de ciudadanía' },
-      { value: 'ti', label: 'Tarjeta de identidad' },
-      { value: 'pp', label: 'Pasaporte' },
+      { value: 'cc', label: 'Cédula de ciudadanía', active: true },
+      { value: 'ti', label: 'Tarjeta de identidad', active: true },
+      { value: 'pp', label: 'Pasaporte', active: true },
+      { value: 'nt', label: 'NIT', active: false },
     ],
   },
   {
@@ -35,19 +36,34 @@ const settings = [
       ],
     },
   },
+  {
+    key: 'contact_templates',
+    public: false,
+    description: 'Mensajes iniciales para contactar un lead; variables: {first_name}, {program}, {adviser}',
+    value: {
+      country_code: '57',
+      whatsapp: 'Hola {first_name}, soy {adviser} de Kuepa. Vi que te interesa {program} y quiero contarte más.',
+      email: {
+        subject: 'Información sobre {program}',
+        body: 'Hola {first_name},\n\nSoy {adviser} de Kuepa. Te escribo porque te interesa {program}. ¿Cuándo podemos hablar?\n\nSaludos.',
+      },
+    },
+  },
 ]
 
 // Idempotente: se puede correr varias veces con -f sin duplicar datos
 const upsert = (model, where, data) => model.findOneAndUpdate(where, { $set: data }, { upsert: true, new: true, lean: true })
+// Para datos que se editan desde el CRM: crea lo que falte sin pisar lo editado
+const insertMissing = (model, where, data) => model.updateOne(where, { $setOnInsert: data }, { upsert: true })
 
 export const run = async(_params, console:IConsole) => {
   try{
     for (const setting of settings) {
-      await upsert(Setting, { key: setting.key }, setting)
+      await insertMissing(Setting, { key: setting.key }, setting)
     }
 
     for (const program of programs) {
-      await upsert(Program, { name: program.name }, { ...program, status: 'active' })
+      await insertMissing(Program, { name: program.name }, { ...program, status: 'active' })
     }
 
     const user = await User.findOne({ username: 'useradminket' }).lean()

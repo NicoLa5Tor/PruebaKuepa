@@ -30,6 +30,9 @@ class GlobalRoute {
     // @routes
     // público: solo sirve configuraciones marcadas como public
     { method: 'get', path: '/setting/:key', handler: this.controller.setting , middleware: [] },
+    // CRM: lectura de cualquier clave editable y actualización validada
+    { method: 'get', path: '/setting/:key/edit', handler: this.controller.get , middleware: [auth] },
+    { method: 'post', path: '/setting', handler: this.controller.update , middleware: [auth] },
   ] 
 
   public init () {
