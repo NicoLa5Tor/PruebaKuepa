@@ -1,0 +1,44 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  back:
+    build: ./back
+    restart: unless-stopped
+    ports:
+      - "7001:7001"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/kuepa_test
+      PORT: 7001
+      PUBLIC_URL: http://localhost:7001
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (ver .env.example)}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  front:
+    build:
+      context: ./front
+      args:
+        # La URL la consume el navegador, por eso apunta al puerto publicado en el host
+        VITE_API_URL: http://localhost:7001
+        VITE_PUBLIC_URL: http://localhost:7001
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - back
+
+volumes:
+  mongo_data:
