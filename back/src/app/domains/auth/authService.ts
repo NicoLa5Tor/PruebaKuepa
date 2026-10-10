@@ -27,11 +27,11 @@ class AuthService {
 
   constructor () {}
 
-  // Roles y permisos del usuario, necesarios para armar la sesión
+  // Roles y permisos del usuario, necesarios para armar la sesión (home y can)
   private withRoles = (query) => query
   .populate({
     path:'homes.roles',
-    select:'name permission',
+    select:'name permissions',
     options: { lean:true },
     populate:{
       path: 'permissions',
@@ -49,18 +49,7 @@ class AuthService {
           _token = jwt.verify(_params.token, config.jwt)
         } catch (error) { }
         if(_token?.user){
-          user = await User.findOne({_id: _token.user})
-          .populate({
-            path:'homes.roles',
-            select:'permission',
-            options: { lean:true },
-            populate:{
-              path: 'permissions',
-              select: 'content',
-              options: { lean:true}
-            }
-          })
-          .lean()
+          user = await this.withRoles(User.findOne({_id: _token.user})).lean()
         }
       }
       if(!user) {

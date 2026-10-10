@@ -2,7 +2,17 @@
 // así un error de Logto, Google o Facebook no deja al usuario varado allá.
 
 export const SOCIAL_LOGIN_MESSAGE = 'kuepa:social-login'
-export const SOCIAL_TARGETS = ['google', 'facebook']
+// Conectores sociales configurados en Logto
+export const SOCIAL_TARGETS = ['google', 'facebook'] as const
+export type SocialTarget = typeof SOCIAL_TARGETS[number]
+
+export const isSocialTarget = (value: string): value is SocialTarget => (SOCIAL_TARGETS as readonly string[]).includes(value)
+
+// Opciones de Logto: directSignIn salta su pantalla y va directo al proveedor
+export const socialSignInOptions = (target: SocialTarget) => ({
+  redirectUri: `${window.location.origin}/callback`,
+  directSignIn: { method: 'social' as const, target },
+})
 
 export const SOCIAL_LOGIN_ERRORS: Record<string, string> = {
   'auth.logto.not_allowed': 'Tu cuenta no tiene acceso al CRM. Pide a un administrador que registre tu email.',
@@ -33,7 +43,7 @@ export const notifyOpener = (payload: Omit<SocialLoginMessage, 'type'>) => {
 }
 
 // Debe llamarse directo desde el clic; si no, el navegador bloquea el popup (devuelve null)
-export const openLoginPopup = (target: string) => {
+export const openLoginPopup = (target: SocialTarget) => {
   const width = 500
   const height = 650
   const left = window.screenX + (window.outerWidth - width) / 2

@@ -3,10 +3,9 @@ import { useLogto } from '@logto/react'
 import { IconType } from 'react-icons'
 import { TbBrandFacebook, TbBrandGoogle } from 'react-icons/tb'
 import authService from '@/services/authService'
-import { openLoginPopup, SOCIAL_LOGIN_ERRORS, SOCIAL_LOGIN_MESSAGE, SocialLoginMessage } from '@/util/social-login'
+import { openLoginPopup, SOCIAL_LOGIN_ERRORS, SOCIAL_LOGIN_MESSAGE, SocialLoginMessage, socialSignInOptions, SocialTarget } from '@/util/social-login'
 
-// target = conector social configurado en Logto
-const PROVIDERS: { target: string, label: string, icon: IconType }[] = [
+const PROVIDERS: { target: SocialTarget, label: string, icon: IconType }[] = [
   { target: 'google', label: 'Continuar con Google', icon: TbBrandGoogle },
   { target: 'facebook', label: 'Continuar con Facebook', icon: TbBrandFacebook },
 ]
@@ -24,7 +23,8 @@ export interface SocialLoginProps {
 */
 export function SocialLogin({ onSuccess }: SocialLoginProps) {
   const { signIn } = useLogto()
-  const [pending, setPending] = useState<string | null>(null)
+  // popup: false cuando el navegador lo bloqueó y se usa la redirección de respaldo
+  const [pending, setPending] = useState<{ target: SocialTarget, popup: boolean } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const popupRef = useRef<Window | null>(null)
   const watcherRef = useRef<number | null>(null)
@@ -59,24 +59,21 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
     }
   }
 
-  const handleSignIn = (target: string) => {
+  const handleSignIn = (target: SocialTarget) => {
     setError(null)
     const popup = openLoginPopup(target)
 
     // Popup bloqueado por el navegador: respaldo con redirección (vuelve por /callback)
     if (!popup) {
-      setPending(target)
-      signIn({
-        redirectUri: `${window.location.origin}/callback`,
-        directSignIn: { method: 'social', target },
-      })
+      setPending({ target, popup: false })
+      signIn(socialSignInOptions(target))
       return
     }
 
     popupRef.current = popup
     listenerRef.current = handleMessage
     window.addEventListener('message', handleMessage)
-    setPending(target)
+    setPending({ target, popup: true })
 
     // Cerrado sin mensaje: canceló o quedó en una página de error de Logto.
     // El popup avisa y se cierra enseguida; se espera un instante para que el aviso llegue primero
@@ -113,10 +110,10 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
           className="flex w-56 items-center justify-center gap-2 rounded-full border border-orange-200 bg-white px-3 py-2 font-title text-sm text-orange-900 shadow-sm transition-all hover:bg-orange-50 disabled:opacity-60"
         >
           <provider.icon className="h-5 w-5" />
-          {pending === provider.target ? 'Esperando…' : provider.label}
+          {pending?.target === provider.target ? 'Esperando…' : provider.label}
         </button>
       ))}
-      {pending && popupRef.current ? (
+      {pending?.popup ? (
         <button type="button" onClick={cancel} className="text-xs text-orange-700 hover:underline">
           Cancelar
         </button>

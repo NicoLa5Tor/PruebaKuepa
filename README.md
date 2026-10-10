@@ -70,6 +70,25 @@ Navegador ──WebSocket (Socket.IO)──► Back ──► Redis (pub/sub) �
 - **Por qué Redis:** con una sola instancia del back, Socket.IO funciona solo. Redis (`@socket.io/redis-adapter`) permite correr varias instancias detrás de un balanceador: un evento emitido en una instancia llega a los navegadores conectados a cualquier otra. Es opcional (`REDIS_URL`); si Redis se cae, el back sigue funcionando y se reconecta solo cuando vuelve.
 - Para escalar a varias réplicas en el compose habría que agregar un balanceador, porque el puerto `7001` está fijo.
 
+### Inicio de sesión con Google y Facebook (Logto)
+
+```
+CRM ──popup──► Logto ──► Google / Facebook
+ ▲               │
+ └── postMessage ◄── /callback (popup): ID token ──► POST /api/auth/logto ──► nuestra sesión
+```
+
+- Logto solo autentica. El back valida el **ID token** (firma con las llaves públicas de Logto, emisor y audiencia) y entrega **la misma sesión** que el login con contraseña, así que guards, socket y permisos no cambian.
+- Solo entran usuarios que ya existen en el CRM: se vinculan por `email` verificado la primera vez y después por `logto_id`. Una cuenta ya vinculada no se re-vincula a otra identidad social.
+- El flujo se abre en una **ventana emergente**: si algo falla en Logto o en el proveedor, la pestaña del CRM sigue ahí y avisa al cerrar el popup. Si el navegador bloquea el popup, se usa la redirección normal como respaldo.
+- En Logto el **registro está habilitado** y no pide identificadores extra en el registro social (*skip required identifiers*): una cuenta social nueva se crea en Logto sin pantallas adicionales y vuelve al CRM, que responde "Tu cuenta no tiene acceso" si su email no está registrado. Con el registro deshabilitado, Logto se quedaría en su pantalla de "cuenta no registrada" sin volver a la app.
+- **Configuración en Logto:** una aplicación de tipo *Single Page App* con:
+  - Redirect URI: `http://localhost:5173/callback`
+  - Post sign-out: `http://localhost:5173/auth`
+  - CORS: `http://localhost:5173`
+
+  Su App ID va en `LOGTO_APP_ID` y `VITE_LOGTO_APP_ID`. Los conectores de Google y Facebook se configuran en Logto, no en el CRM.
+
 ### Seguridad
 - Las rutas del CRM están protegidas en el front (`RequireAuth`) y en el back (`authMiddleware`).
 - `user_logged` solo se toma del middleware, nunca del body.
@@ -94,6 +113,9 @@ cd front && npm i && npm run dev
 | `PORT` | back | `7001` |
 | `JWT_SECRET` | back | **obligatoria** |
 | `SEED_ADMIN_PASSWORD` | back (seeder) | **obligatoria** para el seeder |
+| `SEED_ADMIN_EMAIL` | back (seeder) | vacío; con él, el usuario de prueba entra por Google o Facebook |
+| `LOGTO_ENDPOINT` / `LOGTO_APP_ID` | back | vacíos; necesarios para el inicio de sesión social |
+| `VITE_LOGTO_ENDPOINT` / `VITE_LOGTO_APP_ID` | front (build) | definidos en `docker-compose.yml` |
 | `VITE_API_URL` | front (build) | `http://localhost:7001` |
 
 ## Mejoras identificadas (no incluidas)
