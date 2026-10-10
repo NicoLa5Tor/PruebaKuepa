@@ -6,126 +6,29 @@ import moment from "moment"
 import { thirdService } from "@app/domains/third/thirdService"
 import { notificationService } from "@app/domains/notification/notificationService"
 import { globalService } from "@app/domains/global/globalService"
+import { interactionService } from "@app/domains/interaction/interactionService"
+import { ILeadInput, leadValidator } from "@app/domains/lead/validators/leadValidator"
 
 // @import_models
-import { Lead, Campaign, Third, Adnetwork, Tracking, Message, Interaction, Program } from "@app/models"
+import { Lead, Campaign, Adnetwork, Tracking } from "@app/models"
+import { NotificationType } from "@app/models/notificationModel"
 
 // @import_utilities
 import { responseUtility } from "@core/utilities/responseUtility"
 import { socketUtility } from "@core/utilities/socketUtility"
-import { NotificationType } from "@app/models/notificationModel"
+import { contactUtility } from "@core/utilities/contactUtility"
 
 // @import_types
-export interface ILeadInput {
-  _id?: string
-  first_name?: string
-  last_name?: string
-  email?: string
-  mobile_phone?: string
-  interestProgram?: string
-  document_type?: string
-  document?: string
-  status?: string
-}
 
-type IFieldErrors = Record<string, 'required' | 'invalid' | 'not_found'>
-
+// Estados en los que un lead sigue en gestión (no se permite otro abierto para la misma persona)
 const OPEN_STATUSES = ['active', 'grading']
 const CONTACT_CHANNELS = ['whatsapp', 'email']
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
-const PHONE_REGEX = /^\+?\d{7,15}$/
-const DOCUMENT_REGEX = /^[a-zA-Z0-9]{4,20}$/
+
 
 class LeadService {
 
 
   constructor () {}
-
-  /**
-  * Lista blanca: solo estos campos pueden venir del cliente.
-  * Normaliza espacios, el email en minúsculas y el celular solo con dígitos.
-  */
-  private pick (_params): ILeadInput {
-    const text = (value) => typeof value === 'string' ? value.trim() : undefined
-    const data: ILeadInput = {
-      first_name: text(_params.first_name),
-      last_name: text(_params.last_name),
-      email: text(_params.email)?.toLowerCase(),
-      mobile_phone: text(_params.mobile_phone)?.replace(/[\s\-()]/g, ''),
-      interestProgram: text(_params.interestProgram),
-      document_type: text(_params.document_type)?.toLowerCase(),
-      document: text(_params.document)?.replace(/[\s.]/g, ''),
-    }
-    if (_params._id) {
-      data._id = _params._id
-      // El estado solo se cambia al editar; un lead nuevo siempre nace 'active'
-      if (_params.status !== undefined) data.status = text(_params.status)
-    }
-    return data
-  }
-
-  private async validate (data: ILeadInput): Promise<IFieldErrors> {
-    const fields: IFieldErrors = {}
-
-    for (const field of ['first_name', 'last_name', 'email', 'mobile_phone', 'interestProgram', 'document_type', 'document']) {
-      if (!data[field]) fields[field] = 'required'
-    }
-
-    if (data.email && !EMAIL_REGEX.test(data.email)) fields.email = 'invalid'
-    if (data.mobile_phone && !PHONE_REGEX.test(data.mobile_phone)) fields.mobile_phone = 'invalid'
-    // Tipos permitidos: la misma lista configurada en Mongo que muestra el formulario
-    const document_types = await globalService.getSetting('document_types')
-    if (!Array.isArray(document_types)) throw new Error('setting document_types no configurado')
-    if (data.document_type && !document_types.some((_t) => _t.active && _t.value === data.document_type)) fields.document_type = 'invalid'
-    if (data.document && !DOCUMENT_REGEX.test(data.document)) fields.document = 'invalid'
-    if (data._id && !mongoose.isValidObjectId(data._id)) fields._id = 'invalid'
-    if (data.status !== undefined && !Lead.schema.path('status').options.enum.includes(data.status)) fields.status = 'invalid'
-
-    if (data.interestProgram) {
-      if (!mongoose.isValidObjectId(data.interestProgram)) {
-        fields.interestProgram = 'invalid'
-      } else {
-        const program = await Program.exists({ _id: data.interestProgram, status: 'active' })
-        if (!program) fields.interestProgram = 'not_found'
-      }
-    }
-
-    return fields
-  }
-
-  /**
-  * El prospecto como persona es un Third de tipo 'cli'; el lead es su interés en un programa.
-  * Se identifica solo por documento: el email puede ser compartido (p. ej. el de un acudiente).
-  */
-  private async findContact (data: ILeadInput) {
-    return await Third.findOne({
-      type: 'cli',
-      document_type: data.document_type,
-      document: data.document,
-    }).lean()
-  }
-
-  private async saveContact (data: ILeadInput, existing?) {
-    const contact_data = {
-      first_name: data.first_name,
-      last_name: data.last_name,
-      name: `${data.first_name} ${data.last_name}`,
-      email: data.email,
-      number: data.mobile_phone,
-      document_type: data.document_type,
-      document: data.document,
-      type: 'cli',
-      status: 'active',
-    }
-
-    if (existing) {
-      await Third.updateOne({ _id: existing._id }, { $set: contact_data })
-      return existing._id
-    }
-
-    const created = await Third.create(contact_data)
-    return created._id
-  }
 
   /**
   * Persiste el lead. Recibe datos ya validados más las referencias
@@ -142,11 +45,11 @@ class LeadService {
     return created.toObject()
   }
 
-  // Datos relacionados que muestra el CRM; los comparten list y el evento en vivo
+  // Datos relacionados que muestra el CRM; los comparten list, get y el evento en vivo
   private withSummary = (query) => query
   .populate({
     path: 'contact',
-    select: 'first_name last_name document_type document number',
+    select: 'first_name last_name incremental document_type document number email',
     options: { lean:true }
   })
   .populate({
@@ -192,8 +95,8 @@ class LeadService {
 
   public async upsert (_params) {
     try{
-      const data = this.pick(_params)
-      const fields = await this.validate(data)
+      const data = leadValidator.pick(_params)
+      const fields = await leadValidator.validate(data)
       if (Object.keys(fields).length) {
         return responseUtility.error('lead.validation', null, { code: 400, fields })
       }
@@ -208,12 +111,12 @@ class LeadService {
       }
 
       // Se valida el duplicado antes de escribir para que un 409 no modifique datos
-      const existing = await this.findContact(data)
+      const existing = await thirdService.findClient(data)
       if (existing && await this.hasOpenLead(existing._id, data._id)) {
         return responseUtility.error('lead.duplicate', null, { code: 409 })
       }
 
-      const contact = await this.saveContact(data, existing)
+      const contact = await thirdService.saveClient(data, existing)
 
       const extra: any = {}
 
@@ -241,7 +144,7 @@ class LeadService {
 
   public async adviserInfo (_params){
     try{
-      const third = await Third.findOne({user: _params.user_logged}).lean()
+      const third = await thirdService.findByUser(_params.user_logged)
       if(!third) return responseUtility.error('third.not_found',null, {code: 404});
 
       const where_campaigns = {
@@ -305,10 +208,10 @@ class LeadService {
   */
   public async external (_params) {
     try{
-      const data = this.pick(_params)
+      const data = leadValidator.pick(_params)
       delete data._id
 
-      const fields = await this.validate(data)
+      const fields = await leadValidator.validate(data)
       if (Object.keys(fields).length) {
         return responseUtility.error('lead.validation', null, { code: 400, fields })
       }
@@ -321,36 +224,8 @@ class LeadService {
       if (!adviser) return responseUtility.error('campaign.not_found')
 
       // Endpoint anónimo: nunca modifica un contacto existente, solo crea si no existe
-      const existing = await this.findContact(data)
-      const contact = existing?._id || await this.saveContact(data)
-
-      const create_interaction = {
-        target: 'human',
-        number: data.mobile_phone,
-        last_inbound: moment().toISOString(),
-        source: 'machine',
-        type: 'form',
-        status: 'ended',
-        messages:[],
-        _ref:{
-          lead: null,
-          adviser,
-          contact
-        }
-      }
-
-      const content = typeof _params.content === 'string' ? _params.content.trim().slice(0, 1000) : ''
-      if(content){
-        const message_created = await Message.create({
-          sender: contact,
-          inbound: true,
-          content,
-          number: data.mobile_phone,
-          type: 'form',
-          source: 'web',
-        })
-        create_interaction.messages.push(message_created._id)
-      }
+      const existing = await thirdService.findClient(data)
+      const contact = existing?._id || await thirdService.saveClient(data)
 
       // Si ya tiene un lead abierto se registra el nuevo interés como seguimiento
       let lead: any = await Lead.findOne({ contact, status: {$in: OPEN_STATUSES}}).lean()
@@ -378,8 +253,15 @@ class LeadService {
         void this.publishLead(lead._id, { event: true, notification: 'lead_created' })
       }
 
-      create_interaction._ref.lead = lead._id
-      await Interaction.create(create_interaction)
+      await interactionService.register({
+        type: 'form',
+        source: 'machine',
+        number: data.mobile_phone,
+        lead: lead._id,
+        contact,
+        adviser,
+        content: typeof _params.content === 'string' ? _params.content.trim().slice(0, 1000) : '',
+      })
 
       // Respuesta mínima: es un endpoint público y no debe exponer datos del CRM
       return responseUtility.success({
@@ -435,21 +317,18 @@ class LeadService {
         program: lead.interestProgram?.name || '',
         adviser: adviser.first_name || adviser.name || '',
       }
+      const fill = (template: string) => contactUtility.fillTemplate(template, variables)
       const url = _params.channel === 'whatsapp'
-        ? this.whatsappUrl(lead.mobile_phone, templates, variables)
-        : this.emailUrl(lead.email, templates, variables)
+        ? contactUtility.whatsappUrl(lead.mobile_phone, templates.country_code, fill(templates.whatsapp))
+        : contactUtility.emailUrl(lead.email, fill(templates.email?.subject), fill(templates.email?.body))
 
-      await Interaction.create({
-        target: 'human',
-        source: 'human',
+      await interactionService.register({
         type: _params.channel,
-        status: 'ended',
+        source: 'human',
         number: lead.mobile_phone,
-        _ref: {
-          lead: lead._id,
-          contact: lead.contact?._id,
-          adviser: adviser._id,
-        }
+        lead: lead._id,
+        contact: lead.contact?._id,
+        adviser: adviser._id,
       })
 
       const status = lead.status === 'active' ? 'grading' : lead.status
@@ -465,30 +344,13 @@ class LeadService {
     }
   }
 
-  // Reemplaza {variable} por su valor; las variables desconocidas se dejan tal cual
-  private fillTemplate (template: string, variables: Record<string, string>) {
-    return `${template || ''}`.replace(/\{(\w+)\}/g, (match, key) => variables[key] ?? match)
-  }
-
-  private whatsappUrl (mobile_phone: string, templates, variables) {
-    // wa.me exige el número con indicativo y sin '+'
-    const number = mobile_phone.startsWith('+') ? mobile_phone.slice(1) : `${templates.country_code}${mobile_phone}`
-    const text = this.fillTemplate(templates.whatsapp, variables)
-    return `https://wa.me/${number}?text=${encodeURIComponent(text)}`
-  }
-
-  private emailUrl (email: string, templates, variables) {
-    const subject = this.fillTemplate(templates.email?.subject, variables)
-    const body = this.fillTemplate(templates.email?.body, variables)
-    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-  }
-
   public async list (_params) {
     try{
-      const where:any = {}
+      // Igual que el resto de operaciones: el asesor solo ve sus leads
+      const adviser = await thirdService.findByUser(_params.user_logged)
+      if (!adviser) return responseUtility.error('third.not_found')
 
-      const third = await thirdService.findByUser(_params.user_logged)
-      if(third) where.adviser = third._id
+      const where: any = { adviser: adviser._id }
 
       if (typeof _params.filters === 'string' && _params.filters.trim() !== '') {
         const filter = { $regex: this.escapeRegex(_params.filters.trim()), $options: 'i' }
@@ -523,9 +385,10 @@ class LeadService {
   */
   public async stats (_params) {
     try{
-      const match: any = { deleted: { $ne: true } }
-      const third = await thirdService.findByUser(_params.user_logged)
-      if(third) match.adviser = third._id
+      const adviser = await thirdService.findByUser(_params.user_logged)
+      if (!adviser) return responseUtility.error('third.not_found')
+
+      const match: any = { deleted: { $ne: true }, adviser: adviser._id }
 
       const [total, last_week, by_status, by_program, recent] = await Promise.all([
         Lead.countDocuments(match),
@@ -565,35 +428,14 @@ class LeadService {
 
   public async get (_params:{_id:string, user_logged?:string}) {
     try{
+      const adviser = await thirdService.findByUser(_params.user_logged)
+      if (!adviser) return responseUtility.error('third.not_found')
       if (!mongoose.isValidObjectId(_params._id)) return responseUtility.error('lead.not_found')
 
-      // Mismo criterio que list: el asesor solo ve sus leads
-      const where: any = { _id: _params._id }
-      const third = await thirdService.findByUser(_params.user_logged)
-      if (third) where.adviser = third._id
+      const lead = await this.withSummary(Lead.findOne({ _id: _params._id, adviser: adviser._id })).lean()
+      if (!lead) return responseUtility.error('lead.not_found')
 
-      const lead = await Lead.findOne(where)
-      .populate({
-        path: 'contact',
-        select: 'first_name last_name incremental document_type document number email',
-        options: { lean:true }
-      })
-      .populate({
-        path: 'interestProgram',
-        select: 'name',
-        options: { lean:true }
-      })
-      .lean()
-
-      if(!lead) return responseUtility.error('lead.not_found');
-      const interactions = await Interaction.find({'_ref.lead': _params._id})
-      .populate({
-        path: 'messages',
-        select: 'inbound from to content created_at',
-        options: { lean:true }
-      })
-      .sort({created_at:-1})
-      .lean()
+      const interactions = await interactionService.listByLead(lead._id)
       return responseUtility.success({
         lead,
         interactions

@@ -15,6 +15,16 @@ export interface IEmailFactory {
   qty: number
 }
 
+// Datos de una persona prospecto (Third de tipo 'cli')
+export interface IClientInput {
+  first_name?: string
+  last_name?: string
+  email?: string
+  mobile_phone?: string
+  document_type?: string
+  document?: string
+}
+
 class ThirdService {
   
   
@@ -24,6 +34,37 @@ class ThirdService {
   public async findByUser (user) {
     if (!user) return null
     return await Third.findOne({ user }).lean()
+  }
+
+  /**
+  * El prospecto como persona es un Third de tipo 'cli'.
+  * Se identifica solo por documento: el email puede ser compartido (p. ej. el de un acudiente).
+  */
+  public async findClient ({ document_type, document }: IClientInput) {
+    return await Third.findOne({ type: 'cli', document_type, document }).lean()
+  }
+
+  // Crea el prospecto o actualiza el existente; devuelve su _id
+  public async saveClient (data: IClientInput, existing?) {
+    const client = {
+      first_name: data.first_name,
+      last_name: data.last_name,
+      name: `${data.first_name} ${data.last_name}`,
+      email: data.email,
+      number: data.mobile_phone,
+      document_type: data.document_type,
+      document: data.document,
+      type: 'cli',
+      status: 'active',
+    }
+
+    if (existing) {
+      await Third.updateOne({ _id: existing._id }, { $set: client })
+      return existing._id
+    }
+
+    const created = await Third.create(client)
+    return created._id
   }
   
   public async ghost (_params:{brand:string, type:string}) {
