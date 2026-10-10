@@ -10,6 +10,7 @@ import { AdnetworkModel } from '@app/models/adnetworkModel'
 import { TrackingModel } from '@app/models/trackingModel'
 import { MessageModel } from '@app/models/messageModel'
 import { InteractionModel } from '@app/models/interactionModel'
+import { ProgramModel } from '@app/models/programModel'
 
 
 // @export_models
@@ -23,5 +24,6 @@ export {
   AdnetworkModel as Adnetwork,
   TrackingModel as Tracking,
   MessageModel as Message,
-  InteractionModel as Interaction
+  InteractionModel as Interaction,
+  ProgramModel as Program
 }

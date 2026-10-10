@@ -10,6 +10,15 @@ const TrackingSchema = new Schema({
   },
   description:{
     type: Schema.Types.String,
+  },
+  // estado al que pasa el lead cuando se registra este seguimiento
+  target_status:{
+    type: Schema.Types.String,
+  },
+  defaults:{
+    again: {
+      type: Schema.Types.Boolean,
+    }
   }
 }, {
   collection: 'trackings', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

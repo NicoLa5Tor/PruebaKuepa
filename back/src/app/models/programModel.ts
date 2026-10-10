@@ -10,6 +10,11 @@ const ProgramSchema = new Schema({
   },
   description:{
     type: Schema.Types.String,
+  },
+  status:{
+    type: Schema.Types.String,
+    enum: ['active', 'inactive'],
+    default: 'active'
   }
 }, {
   collection: 'programs', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

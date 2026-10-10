@@ -29,9 +29,10 @@ class LeadRoute {
   private routes: Array<IRouteParams> = [
     // @routes
     { method: 'get', path: '/get/:_id', handler: this.controller.get , middleware: [auth] },
+    { method: 'get', path: '/stats', handler: this.controller.stats , middleware: [auth] },
     { method: 'get', path: '/', handler: this.controller.list , middleware: [auth] },
-    { method: 'post', path: '/test', handler: this.controller.test , middleware: [] },
     { method: 'post', path: '/upsert', handler: this.controller.upsert , middleware: [auth] },
+    // público: lo usa el formulario de inscripción para clientes
     { method: 'post', path: '/external', handler: this.controller.external , middleware: [] },
     { method: 'post', path: '/adviser-info', handler: this.controller.adviserInfo , middleware: [auth] },
   ] 

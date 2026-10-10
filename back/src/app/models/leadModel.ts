@@ -5,8 +5,18 @@ import mongoose from 'mongoose'
 const { Schema } = mongoose 
 
 export interface ILead {
-  incremental: number;
-  number: string;
+  incremental?: number;
+  full_name: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  mobile_phone: string;
+  interestProgram: mongoose.Types.ObjectId;
+  contact?: mongoose.Types.ObjectId;
+  adviser?: mongoose.Types.ObjectId;
+  campaign?: mongoose.Types.ObjectId;
+  adnetwork?: mongoose.Types.ObjectId;
+  status: 'active' | 'inactive' | 'grading' | 'sold' | 'dropped';
 }
 
 const LeadSchema = new Schema({
@@ -20,9 +30,13 @@ const LeadSchema = new Schema({
   email: {type: Schema.Types.String},
   mobile_phone: {type: Schema.Types.String},
   interestProgram: {type: Schema.Types.ObjectId, ref: 'Program'},
+  contact: {type: Schema.Types.ObjectId, ref: 'Third'},
+  adviser: {type: Schema.Types.ObjectId, ref: 'Third'},
+  campaign: {type: Schema.Types.ObjectId, ref: 'Campaign'},
+  adnetwork: {type: Schema.Types.ObjectId, ref: 'Adnetwork'},
   status:{
     type: Schema.Types.String,
-    enum: ['active', 'inactive'],
+    enum: ['active', 'inactive', 'grading', 'sold', 'dropped'],
     default: 'active'
   },
   trackings: [
