@@ -70,9 +70,9 @@ export function Notifications() {
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <span className="text-sm font-semibold text-slate-800">Notificaciones</span>
           {unread ? (
-            <button onClick={() => markAsRead()} className="flex items-center gap-1 text-xs text-purple-700 hover:underline">
-              <TbChecks className="h-3.5 w-3.5" /> Marcar todas como leídas
-            </button>
+            <Button variant="link" size="sm" onClick={() => markAsRead()} className="h-auto p-0 text-xs text-purple-700">
+              <TbChecks /> Marcar todas como leídas
+            </Button>
           ) : null}
         </div>
         <div className="max-h-96 overflow-y-auto">
@@ -87,7 +87,7 @@ export function Notifications() {
               key={notification._id}
               onClick={() => handleSelect(notification)}
               className={cn(
-                'flex w-full gap-3 border-b border-slate-50 px-4 py-3 text-left transition-colors hover:bg-slate-50',
+                'flex w-full gap-3 rounded-none border-b border-slate-50 px-4 py-3 text-left transition-colors hover:bg-slate-50',
                 !notification.read_at && 'bg-purple-50/60'
               )}
             >

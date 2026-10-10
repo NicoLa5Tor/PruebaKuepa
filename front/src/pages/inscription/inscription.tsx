@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { TbCircleCheck, TbClock, TbHeadset, TbSchool } from "react-icons/tb"
 import { LeadForm } from "@/components/leads/lead-form"
+import { Button } from "@/components/ui/button"
 import { ILeadInput, leadService } from "@/services/leadService"
 
 // Página pública: un prospecto deja sus datos y llega al CRM como lead orgánico
@@ -53,13 +54,13 @@ function Inscription () {
               <p className="text-slate-600 max-w-sm">
                 Recibimos tus datos. Un asesor de Kuepa se pondrá en contacto contigo muy pronto para contarte todo sobre el programa.
               </p>
-              <button onClick={() => setRegistered(false)} className="text-sm text-orange-600 hover:underline">
+              <Button variant="link" onClick={() => setRegistered(false)} className="text-orange-600">
                 Registrar a otra persona
-              </button>
+              </Button>
             </div>
           ) : (
             <>
-              <span className="flex text-5xl mb-2 font-extrabold bg-gradient-to-r from-orange-400 via-orange-600 to-orange-400 text-transparent bg-clip-text">kuepa</span>
+              <span className="flex text-5xl mb-2 font-extrabold bg-gradient-to-r from-orange-400 via-orange-600 to-orange-400 text-transparent bg-clip-text animate-gradient">kuepa</span>
               <h2 className="text-2xl font-semibold text-orange-900">Quiero más información</h2>
               <p className="text-sm text-slate-500 mb-6">Déjanos tus datos y un asesor te contactará.</p>
               <LeadForm

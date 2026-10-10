@@ -25,6 +25,15 @@ export default function Home (props?: HomeProps) {
   const [stats, setStats] = useState<ILeadStats | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const loadStats = async () => {
+    const response = await leadService.stats()
+    if (response?.code === 200) setStats(response)
+    setLoading(false)
+  }
+
+  // Las métricas se recalculan en el back cada vez que entra un lead
+  useSocketEvent('lead:created', loadStats)
+
   useEffect(() => {
     app.set({
       ...(app.get() || {}),
@@ -42,15 +51,6 @@ export default function Home (props?: HomeProps) {
     })
     loadStats()
   }, [])
-
-  const loadStats = async () => {
-    const response = await leadService.stats()
-    if (response?.code === 200) setStats(response)
-    setLoading(false)
-  }
-
-  // Las métricas se recalculan en el back cada vez que entra un lead
-  useSocketEvent('lead:created', loadStats)
 
   const sold = stats?.by_status.find((_s) => _s.status === 'sold')?.total || 0
   const topProgram = stats?.by_program[0]

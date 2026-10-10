@@ -152,7 +152,7 @@ class LeadService {
   })
 
   /**
-  * Publica el lead al asesor en tiempo real. Se llama con el lead ya guardado y sin await:
+  * Publica el lead al asesor en tiempo real. Se llama con el lead ya guardado y con void (sin await):
   * si falla (Redis, socket) solo se registra, nunca rompe el registro del lead.
   * - event: emite lead:created para refrescar tablas y métricas abiertas.
   * - notification: además la guarda para la campana; solo aplica cuando el lead
@@ -219,7 +219,7 @@ class LeadService {
       }
 
       const lead = await this.save({ ...data, ...extra, contact, adviser: adviser._id })
-      if (!data._id) this.publishLead(lead._id, { event: true })
+      if (!data._id) void this.publishLead(lead._id, { event: true })
 
       return responseUtility.success({
         object: lead
@@ -357,7 +357,7 @@ class LeadService {
             }
           })
         }
-        this.publishLead(lead._id, { notification: 'lead_again' })
+        void this.publishLead(lead._id, { notification: 'lead_again' })
       } else {
         lead = await this.save({
           ...data,
@@ -366,7 +366,7 @@ class LeadService {
           adnetwork: adnetwork._id,
           campaign: campaign._id,
         })
-        this.publishLead(lead._id, { event: true, notification: 'lead_created' })
+        void this.publishLead(lead._id, { event: true, notification: 'lead_created' })
       }
 
       create_interaction._ref.lead = lead._id
