@@ -1,6 +1,17 @@
 // Códigos HTTP por llave de error, usados por responseUtility.error('dominio.llave')
 export const errors = {
+  captcha: {
+    invalid: { code: 400 },
+  },
+  request: {
+    too_many: { code: 429 },
+  },
   auth: {
+    login: {
+      // Mismo error para usuario inexistente y contraseña incorrecta: no revela qué usuarios existen
+      error: { code: 401 },
+      inactive: { code: 401 },
+    },
     logto: {
       invalid: { code: 401 },
       email_required: { code: 400 },
@@ -17,6 +28,10 @@ export const errors = {
   },
   third: {
     not_found: { code: 404 },
+  },
+  user: {
+    not_found: { code: 404 },
+    error: { code: 500 },
   },
   program: {
     not_found: { code: 404 },

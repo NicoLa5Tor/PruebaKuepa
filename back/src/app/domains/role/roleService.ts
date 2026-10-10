@@ -18,13 +18,6 @@ class RoleService {
   
   
   
-  public async test (_params) {
-    try{
-      
-    } catch (error) {
-      console.log('error', error)
-    }
-  }
 }
 
 export const roleService = new RoleService()

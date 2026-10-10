@@ -51,6 +51,8 @@ services:
         # Logto: app SPA "Kuepa CRM" (el App ID es público)
         VITE_LOGTO_ENDPOINT: https://logto.arisma.com.co
         VITE_LOGTO_APP_ID: wpqq5ute5og9jfags2mom
+        # Turnstile: site key pública. Esta es la de prueba oficial de Cloudflare (siempre pasa)
+        VITE_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
     restart: unless-stopped
     ports:
       - "5173:80"

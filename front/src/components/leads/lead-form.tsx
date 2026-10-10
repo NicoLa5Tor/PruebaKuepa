@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { LEAD_STATUS } from './lead-status'
 import { IProgram, programService } from '@/services/programService'
 import { IDocumentType } from '@/services/globalService'
 import { useSetting } from '@/hooks/use-setting'
+import { Captcha, CaptchaHandle } from '@/components/auth/captcha'
 
 // En edición se agrega el estado; un lead nuevo siempre nace 'active' en el back
 type LeadFormData = ILeadInput & { status?: LeadStatus }
@@ -38,9 +39,13 @@ const MESSAGES: Record<string, Partial<Record<FieldError, string>>> = {
   interestProgram: { invalid: 'Selecciona un programa', not_found: 'Ese programa ya no está disponible' },
 }
 
-const RESPONSE_ERRORS: Record<number, string> = {
-  409: 'Ya existe un lead abierto para esta persona.',
-  404: 'No encontramos la información necesaria para registrar el lead.',
+// Por llave del error del back (no por código HTTP: un 400 puede ser validación o captcha)
+const RESPONSE_ERRORS: Record<string, string> = {
+  'lead.duplicate': 'Ya existe un lead abierto para esta persona.',
+  'third.not_found': 'No encontramos la información necesaria para registrar el lead.',
+  'campaign.not_found': 'No encontramos la información necesaria para registrar el lead.',
+  'request.too_many': 'Recibimos demasiados registros desde tu conexión. Intenta más tarde.',
+  'captcha.invalid': 'No pudimos verificar que no eres un robot. Intenta de nuevo.',
 }
 
 const messageFor = (field: string, error: FieldError) =>
@@ -69,21 +74,25 @@ const validate = (data: LeadFormData) => {
 }
 
 export interface LeadFormProps {
-  // Devuelve la respuesta del back ({ code, fields?, ... })
-  onSubmit: (data: LeadFormData) => Promise<any>
+  // Devuelve la respuesta del back ({ code, message?, fields? })
+  onSubmit: (data: LeadFormData & { captcha_token?: string }) => Promise<any>
   // Con un lead el formulario edita (y muestra el estado); sin él, crea
   initialData?: ILead
   onSuccess?: (response: any) => void
   submitLabel?: string
   accent?: 'purple' | 'orange'
+  // Formulario público: exige Cloudflare Turnstile (el del CRM ya exige sesión)
+  captcha?: boolean
 }
 
-export function LeadForm({ onSubmit, onSuccess, initialData, submitLabel = 'Guardar lead', accent = 'purple' }: LeadFormProps) {
+export function LeadForm({ onSubmit, onSuccess, initialData, submitLabel = 'Guardar lead', accent = 'purple', captcha = false }: LeadFormProps) {
   const [data, setData] = useState<LeadFormData>(initialData ? toFormData(initialData) : EMPTY)
   const [errors, setErrors] = useState<Record<string, FieldError>>({})
   const [general, setGeneral] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [programs, setPrograms] = useState<IProgram[]>([])
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<CaptchaHandle>(null)
   const { value: documentTypes, loading: loadingSettings } = useSetting<IDocumentType[]>('document_types')
 
   const activeDocumentTypes = (documentTypes || []).filter((type) => type.active)
@@ -110,9 +119,13 @@ export function LeadForm({ onSubmit, onSuccess, initialData, submitLabel = 'Guar
     setErrors(fields)
     if (Object.keys(fields).length) return
 
+    if (captcha && !captchaToken) return
+
     setLoading(true)
-    const response = await onSubmit(data)
+    const response = await onSubmit(captcha ? { ...data, captcha_token: captchaToken } : data)
     setLoading(false)
+    // El token se consume en el back: el siguiente envío necesita uno nuevo
+    if (captcha) captchaRef.current?.reset()
 
     if (response?.code === 200) {
       setData({ ...EMPTY, document_type: defaultDocumentType })
@@ -120,7 +133,7 @@ export function LeadForm({ onSubmit, onSuccess, initialData, submitLabel = 'Guar
     } else if (response?.fields) {
       setErrors(response.fields)
     } else {
-      setGeneral(RESPONSE_ERRORS[response?.code] || 'No pudimos guardar la información. Intenta de nuevo.')
+      setGeneral(RESPONSE_ERRORS[response?.message] || 'No pudimos guardar la información. Intenta de nuevo.')
     }
   }
 
@@ -209,8 +222,14 @@ export function LeadForm({ onSubmit, onSuccess, initialData, submitLabel = 'Guar
         'sm:col-span-2'
       ) : null}
 
+      {captcha ? (
+        <div className="sm:col-span-2 flex justify-center">
+          <Captcha ref={captchaRef} onToken={setCaptchaToken} />
+        </div>
+      ) : null}
+
       <div className="sm:col-span-2 flex justify-end pt-2">
-        <Button type="submit" disabled={loading} className={cn('w-full sm:w-auto min-w-40', button)}>
+        <Button type="submit" disabled={loading || (captcha && !captchaToken)} className={cn('w-full sm:w-auto min-w-40', button)}>
           {loading ? 'Guardando…' : submitLabel}
         </Button>
       </div>

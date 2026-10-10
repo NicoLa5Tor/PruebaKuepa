@@ -216,13 +216,6 @@ class ThirdService {
     }
   }
   
-  public async test (_params) {
-    try{
-      
-    } catch (error) {
-      console.log('error', error)
-    }
-  }
 }
 
 export const thirdService = new ThirdService()

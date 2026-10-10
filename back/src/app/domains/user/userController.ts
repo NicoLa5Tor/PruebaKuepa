@@ -20,42 +20,21 @@ class UserController {
 
   constructor () {}
 
-  public test = async(req: Request, res: Response) => {
-    const _params = req._data()
-    const response = await this.service.test(_params)
-    return responseUtility.build(res, response)
-  }
+  // user_logged solo puede venir del middleware: el body no puede suplantar a otro usuario
+  private params = (req: Request) => ({
+    ...req._data(),
+    user_logged: req.params.user_logged
+  })
 
-  public upsert = async(req: Request, res: Response) => {
-    const _params = req._data()
-    const response = await this.service.upsert(_params)
+  public updateProfile = async(req: Request, res: Response) => {
+    const response = await this.service.updateProfile(this.params(req))
     return responseUtility.build(res, response)
   }
 
   public upsertAddress = async(req: Request, res: Response) => {
-    const _params = req._data()
-    const response = await this.service.upsertAddress(_params)
+    const response = await this.service.upsertAddress(this.params(req))
     return responseUtility.build(res, response)
   }
-
-  public delete = async(req: Request, res: Response) => {
-    const _params = req._data()
-    const response = await this.service.delete(_params)
-    return responseUtility.build(res, response)
-  }
-  
-  public get = async(req: Request, res: Response) => {
-    const _params = req._data()
-    const response = await this.service.get(_params)
-    return responseUtility.build(res, response)
-  } 
-
-  public list = async(req: Request, res: Response) => {
-    const _params = req._data()
-    const response = await this.service.list(_params)
-    return responseUtility.build(res, response)
-  } 
-  
 }
 
 

@@ -18,13 +18,6 @@ class PermissionService {
   
   
   
-  public async test (_params) {
-    try{
-      
-    } catch (error) {
-      console.log('error', error)
-    }
-  }
 }
 
 export const permissionService = new PermissionService()

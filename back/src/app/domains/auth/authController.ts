@@ -32,11 +32,6 @@ class AuthController {
     return responseUtility.build(res, response)
   }
   
-  public register = async(req: Request, res: Response) => {
-    const _params = req._data()
-    const response = await this.service.register(_params)
-    return responseUtility.build(res, response)
-  }
   
   
 }

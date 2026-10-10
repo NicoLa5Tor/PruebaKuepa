@@ -10,9 +10,8 @@ export class AuthService {
     this.api = api
   }
 
-  public async login ({username, password}: {username:string,password:string}, app?: any)  {
-    
-    const response = await post({api:`${this.api || API}/login`, options: {data: {username, password, app} }})
+  public async login ({username, password, captcha_token}: {username:string,password:string,captcha_token:string}, app?: any)  {
+    const response = await post({api:`${this.api || API}/login`, options: {data: {username, password, captcha_token, app} }})
     return response
   }
 

@@ -28,7 +28,6 @@ class PermissionRoute {
   
   private routes: Array<IRouteParams> = [
     // @routes
-    { method: 'post', path: '/test', handler: this.controller.test , middleware: [] },
   ] 
 
   public init () {

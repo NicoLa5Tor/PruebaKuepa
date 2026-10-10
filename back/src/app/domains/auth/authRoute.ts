@@ -7,7 +7,8 @@ import { AuthController } from "@app/domains/auth/authController"
 
 // @import_utilities
 import { RouterUtility, IRouteParams } from "@core/utilities/routerUtility"
-import { request as auth } from "@app/middleware/authMiddleware"
+import { request as captcha } from "@app/middleware/captchaMiddleware"
+import { rateLimit } from "@app/middleware/rateLimitMiddleware"
 
 class AuthRoute {
 
@@ -27,10 +28,10 @@ class AuthRoute {
   
   private routes: Array<IRouteParams> = [
     // @routes
-    { method: 'post', path: '/login', handler: this.controller.login , middleware: [] },
+    // El login por token (body.token) ya exige un JWT válido: el captcha aplica al de contraseña
+    { method: 'post', path: '/login', handler: this.controller.login , middleware: [rateLimit({ name: 'login', max: 10, windowSeconds: 15 * 60 }), captcha({ skip: (req) => !!req.body?.token })] },
     // público: recibe el ID token de Logto (Google o Facebook) y entrega nuestra sesión
-    { method: 'post', path: '/logto', handler: this.controller.logto , middleware: [] },
-    { method: 'post', path: '/register', handler: this.controller.register , middleware: [auth] },
+    { method: 'post', path: '/logto', handler: this.controller.logto , middleware: [rateLimit({ name: 'logto', max: 20, windowSeconds: 15 * 60 })] },
   ] 
 
   public init () {

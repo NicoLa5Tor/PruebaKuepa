@@ -94,6 +94,22 @@ CRM ──popup──► Logto ──► Google / Facebook
 - `user_logged` solo se toma del middleware, nunca del body.
 - Los endpoints reciben una lista blanca de campos.
 - Los secretos viven en `.env` y no se suben al repositorio.
+- **Captcha (Cloudflare Turnstile)** en el login con contraseña y en el formulario público. El back lo verifica (`captchaMiddleware`) y falla cerrado si no hay secreto configurado. El repo trae las **llaves de prueba oficiales** de Cloudflare (siempre pasan, el widget muestra "Solo para pruebas"). En producción:
+  - `TURNSTILE_SECRET` en `back/.env`.
+  - `VITE_TURNSTILE_SITE_KEY` en `docker-compose.yml`.
+  - El hostname del sitio agregado al widget en Cloudflare.
+- **Límite de peticiones por IP** (`rateLimitMiddleware`), guardado en Redis y compartido entre instancias, con respaldo en memoria si Redis cae. Al exceder responde `429` con `Retry-After`:
+
+  | Ruta | Límite |
+  |---|---|
+  | `/auth/login` | 10 cada 15 minutos |
+  | `/auth/logto` | 20 cada 15 minutos |
+  | `/lead/external` | 10 por hora |
+
+  Detrás de un proxy, `TRUST_PROXY=true` para leer la IP real.
+- **Login:** usuario inexistente y contraseña incorrecta responden igual (`401 auth.login.error`), así que no se puede averiguar qué usuarios existen.
+- **Usuarios:** solo autoservicio sobre el propio usuario (`/user/upsert` edita el perfil con lista blanca; `/user/upsert-address`). El base no aplica un rol de admin (`can()` siempre es `true`), así que listar, ver, borrar, registrar o editar a otros usuarios no se expone por HTTP.
+- **Pendiente para producción:** el `docker-compose.yml` publica MongoDB (`27017`) **sin contraseña**. Fuera de un entorno local hay que quitar esa publicación (o limitarla a `127.0.0.1`) y activar autenticación en Mongo.
 
 ## Levantar sin Docker
 
@@ -116,6 +132,9 @@ cd front && npm i && npm run dev
 | `SEED_ADMIN_EMAIL` | back (seeder) | vacío; con él, el usuario de prueba entra por Google o Facebook |
 | `LOGTO_ENDPOINT` / `LOGTO_APP_ID` | back | vacíos; necesarios para el inicio de sesión social |
 | `VITE_LOGTO_ENDPOINT` / `VITE_LOGTO_APP_ID` | front (build) | definidos en `docker-compose.yml` |
+| `TURNSTILE_SECRET` | back | llave de prueba de Cloudflare (siempre pasa) |
+| `VITE_TURNSTILE_SITE_KEY` | front (build) | llave de prueba de Cloudflare, en `docker-compose.yml` |
+| `TRUST_PROXY` | back | `false` |
 | `VITE_API_URL` | front (build) | `http://localhost:7001` |
 
 ## Mejoras identificadas (no incluidas)

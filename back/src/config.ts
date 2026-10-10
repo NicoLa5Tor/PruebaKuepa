@@ -24,6 +24,12 @@ export default {
     }
   },
   jwt: process.env.JWT_SECRET,
+  // Cloudflare Turnstile: protege el login con contraseña y el formulario público
+  captcha: {
+    secret: process.env.TURNSTILE_SECRET,
+  },
+  // Detrás de un proxy (nginx, balanceador) para que req.ip sea la IP real del cliente
+  trust_proxy: process.env.TRUST_PROXY === 'true',
   // Inicio de sesión social: Logto autentica y el back valida su ID token
   logto: {
     endpoint: process.env.LOGTO_ENDPOINT,

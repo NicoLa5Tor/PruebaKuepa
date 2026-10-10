@@ -39,6 +39,9 @@ class App {
       this.app.use(morgan('dev'))
     }
     
+    // Detrás de un proxy req.ip debe ser la IP del cliente (la usa el límite de peticiones)
+    if (global.env.trust_proxy) this.app.set('trust proxy', 1)
+
     this.app.use(express.json({limit: '40mb'}))
 
     this.app.use(urlencoded({ extended: false }))

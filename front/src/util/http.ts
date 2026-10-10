@@ -8,6 +8,19 @@ const URL = `${config.api}/api`
 
 const app = 'kuepa'
 
+/**
+* 401 en una petición normal: la sesión venció o es inválida, se cierra y se vuelve al login.
+* En las rutas de autenticación (/auth/login, /auth/logto) un 401 son credenciales inválidas:
+* lo muestra la propia pantalla, sin recargar ni borrar nada.
+*/
+const handleUnauthorized = (api: string) => {
+  if (api.startsWith('/auth/')) return
+  token.set(null)
+  user.set(null)
+  access.set(null)
+  window.location.href = '/auth'
+}
+
 // Borra el cache de un GET (para cualquier token) después de modificar ese recurso
 export const clearCache = (api: string) => {
   const prefix = `${app}:cache:get${api}:`
@@ -60,12 +73,7 @@ export const get = async(_params:{api:string, options?:any}) =>{
           localStorage.setItem(`${app}:cache:get:${_params.api}:${token.get()}`, JSON.stringify(error?.response?.data))
         }
       }
-      if(error?.response?.status === 401){
-        token.set(null)
-        user.set(null)
-        access.set(null)
-        window.location.href = '/auth'
-      }
+      if(error?.response?.status === 401) handleUnauthorized(_params.api)
     } else {
       console.log('error', error)
     }
@@ -118,12 +126,7 @@ export const post = async(_params:{api:string, options?:{data?:any, config?:any,
             localStorage.setItem(`${app}:cache:post:${_params.api}:${token.get()}`, JSON.stringify(error?.response?.data))
           }
         }
-        if(error?.response?.status === 401){
-          token.set(null)
-          user.set(null)
-          access.set(null)
-          window.location.href = '/auth'
-        }
+        if(error?.response?.status === 401) handleUnauthorized(_params.api)
         return error.response.data
       } 
     } else {

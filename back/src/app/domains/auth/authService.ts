@@ -55,7 +55,8 @@ class AuthService {
       if(!user) {
         user = await this.withRoles(User.findOne({username:_params.username})).lean()
       }
-      if(!user) return responseUtility.error('user.not_found');
+      // Mismo error que la contraseña incorrecta: no revela si el usuario existe
+      if(!user) return responseUtility.error('auth.login.error');
       if(!_token){
         const validation = await this.compare(_params.password, user.password)
         // If password validation fails, return an error response
@@ -174,27 +175,6 @@ class AuthService {
     }
   }
 
-  public async register (_params) {
-    try{
-      let user = await User.findOne({username:_params.username}).lean()
-      if(user) return responseUtility.error('auth.register.username_already_taken')
-        
-      if(_params.password){
-        _params.password = await this.hash(_params.password)
-      }
-      
-      
-      user = await User.create(_params)
-      user = user.toObject()
-      
-      return responseUtility.success({
-        user
-      })
-    } catch (error) {
-      console.log('error', error)
-    }
-  }
-  
   public async hash (password) {
     try{
       const salt = await bcrypt.genSalt(10)

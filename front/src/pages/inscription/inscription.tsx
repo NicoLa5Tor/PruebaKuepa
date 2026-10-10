@@ -76,6 +76,7 @@ function Inscription () {
               <p className="text-sm text-slate-500 mb-6">{page?.description}</p>
               <LeadForm
                 accent="orange"
+                captcha
                 submitLabel="Quiero que me contacten"
                 onSubmit={handleSubmit}
                 onSuccess={() => setRegistered(true)}

@@ -20,11 +20,6 @@ class RoleController {
 
   constructor () {}
 
-  public test = async(req: Request, res: Response) => {
-    const _params = req._data()
-    const response = await this.service.test(_params)
-    return responseUtility.build(res, response)
-  }
   
 }
 

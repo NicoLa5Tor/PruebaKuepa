@@ -28,12 +28,10 @@ class UserRoute {
   
   private routes: Array<IRouteParams> = [
     // @routes
-    { method: 'get', path: '/', handler: this.controller.list , middleware: [auth] },
-    { method: 'get', path: '/get/:_id', handler: this.controller.get , middleware: [auth] },
-    { method: 'post', path: '/upsert', handler: this.controller.upsert , middleware: [auth] },
+    // Solo autoservicio sobre el usuario logueado: el base no aplica un rol de admin (can() siempre es true),
+    // así que listar, ver, borrar o editar otros usuarios no se expone por HTTP
+    { method: 'post', path: '/upsert', handler: this.controller.updateProfile , middleware: [auth] },
     { method: 'post', path: '/upsert-address', handler: this.controller.upsertAddress , middleware: [auth] },
-    { method: 'post', path: '/delete', handler: this.controller.delete , middleware: [auth] },
-    { method: 'post', path: '/test', handler: this.controller.test , middleware: [] },
   ] 
 
   public init () {

@@ -12,6 +12,7 @@
   "dependencies": {
     "@logto/react": "^4.1.0",
     "@mantine/core": "^7.12.1",
+    "@marsidev/react-turnstile": "^1.6.1",
     "@monaco-editor/react": "^4.6.0",
     "@nanostores/persistent": "^0.10.2",
     "@nanostores/react": "^0.7.3",

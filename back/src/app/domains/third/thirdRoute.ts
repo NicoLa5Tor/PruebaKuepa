@@ -32,7 +32,6 @@ class ThirdRoute {
     { method: 'post', path: '/upsert', handler: this.controller.upsert , middleware: [auth] },
     { method: 'post', path: '/ghost', handler: this.controller.ghost , middleware: [auth] },
     { method: 'get', path: '/get/:_id', handler: this.controller.get , middleware: [auth] },
-    { method: 'post', path: '/test', handler: this.controller.test , middleware: [] },
   ] 
 
   public init () {

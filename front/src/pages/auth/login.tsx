@@ -4,10 +4,17 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { useStore } from "@nanostores/react"
 import { access,  token, user } from "@/atoms/kuepa"
 import { AuthService } from "@/services/authService"
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, useEffect, useRef, useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { hasSession } from "@/util/session"
 import { SocialLogin } from "@/components/auth/social-login"
+import { Captcha, CaptchaHandle } from "@/components/auth/captcha"
+
+// Errores del back que no son credenciales incorrectas
+const LOGIN_ERRORS: Record<string, string> = {
+  'request.too_many': 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.',
+  'captcha.invalid': 'No pudimos verificar que no eres un robot. Intenta de nuevo.',
+}
 
 
 
@@ -61,17 +68,23 @@ function Login () {
 
   const authService = new AuthService('/auth')
 
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captcha = useRef<CaptchaHandle>(null)
+
   const handleLogin = async (e: FormEvent) => {
-    setLoading(true)
-    
-    setError(null)
     e.preventDefault()
-    const response = await authService.login({username, password}, 'kuepa')
-    if(response.token){
+    if (!captchaToken) return
+    setLoading(true)
+    setError(null)
+
+    const response = await authService.login({username, password, captcha_token: captchaToken}, 'kuepa')
+    if(response?.token){
       authService.startSession(response)
       location(from)
     } else {
-      setError('Usuario o contraseña incorrectos')
+      setError(LOGIN_ERRORS[response?.message] || 'Usuario o contraseña incorrectos')
+      // El token ya se consumió en el back: hace falta uno nuevo para el siguiente intento
+      captcha.current?.reset()
     }
     setLoading(false)
   }
@@ -124,8 +137,11 @@ function Login () {
                       <input value={password} onChange={(e)=>{setPassword(e.target.value)}} id="password"  minLength={6} type="password" name="password" required className="flex border border-solid border-orange-100 transition-all focus:border-orange-200 focus:shadow-md bg-orange-100 outline-none px-2 py-1 w-56 rounded-xl" />
                     </label>
                   </div>
+                  <div className="flex justify-center mb-3">
+                    <Captcha ref={captcha} onToken={setCaptchaToken} />
+                  </div>
                   <div className="flex flex-col justify-center items-center content-center mb-3">
-                    <button disabled={loading} data-onclick="login" className={`to-send disabled:animate-pulse transition-all leading-none flex font-title justify-center text-white bg-${error ? 'red' : 'orange'}-500 text-lg mx-2 cursor-pointer hover:bg-white w-32 content-center  px-2 pt-2 pb-2 rounded-full shadow-md hover:text-${error ? 'red': 'orange'}-500`}>Conectarme</button>
+                    <button disabled={loading || !captchaToken} data-onclick="login" className={`to-send ${loading ? 'animate-pulse' : ''} disabled:opacity-60 transition-all leading-none flex font-title justify-center text-white bg-${error ? 'red' : 'orange'}-500 text-lg mx-2 cursor-pointer hover:bg-white w-32 content-center  px-2 pt-2 pb-2 rounded-full shadow-md hover:text-${error ? 'red': 'orange'}-500`}>Conectarme</button>
                   </div>
                 </form>
                 <SocialLogin onSuccess={() => location(from)} />
