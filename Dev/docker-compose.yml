@@ -1,0 +1,62 @@
+# Desarrollo local. El captcha usa las llaves de prueba de Cloudflare (siempre pasan).
+# El widget real está atado al dominio y en localhost no valida.
+name: prueba-kuepa
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Pub/sub del adaptador de Socket.IO: no guarda datos, por eso no lleva volumen
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  back:
+    build: ../back
+    restart: unless-stopped
+    ports:
+      - "7001:7001"
+    # Secretos y captcha de prueba: Dev/.env, al lado de este compose
+    env_file: .env
+    # Dentro de Docker, Mongo y Redis son los servicios de esta red, no localhost
+    environment:
+      MONGO_URI: mongodb://mongo:27017/kuepa_test
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  front:
+    build:
+      context: ../front
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_PUBLIC_URL: ${VITE_PUBLIC_URL}
+        VITE_LOGTO_ENDPOINT: ${VITE_LOGTO_ENDPOINT}
+        VITE_LOGTO_APP_ID: ${VITE_LOGTO_APP_ID}
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY}
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - back
+
+volumes:
+  mongo_data:
