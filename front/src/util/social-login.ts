@@ -1,3 +1,5 @@
+import { Prompt } from '@logto/react'
+
 // Inicio de sesión social en popup: la pestaña del CRM nunca navega a Logto,
 // así un error de Logto, Google o Facebook no deja al usuario varado allá.
 
@@ -8,10 +10,15 @@ export type SocialTarget = typeof SOCIAL_TARGETS[number]
 
 export const isSocialTarget = (value: string): value is SocialTarget => (SOCIAL_TARGETS as readonly string[]).includes(value)
 
-// Opciones de Logto: directSignIn salta su pantalla y va directo al proveedor
+/**
+* Opciones de Logto: directSignIn salta su pantalla y va directo al proveedor.
+* prompt Login obliga a autenticar de nuevo: sin él, Logto reutiliza su sesión SSO,
+* ignora el proveedor elegido y no deja cambiar de cuenta tras cerrar sesión en el CRM.
+*/
 export const socialSignInOptions = (target: SocialTarget) => ({
   redirectUri: `${window.location.origin}/callback`,
   directSignIn: { method: 'social' as const, target },
+  prompt: Prompt.Login,
 })
 
 export const SOCIAL_LOGIN_ERRORS: Record<string, string> = {
