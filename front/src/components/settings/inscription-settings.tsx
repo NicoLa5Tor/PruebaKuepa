@@ -17,7 +17,7 @@ type Benefit = IInscriptionPage['benefits'][number]
 const DEFAULT_ICON = Object.keys(BENEFIT_ICONS)[0]
 
 export function InscriptionSettings() {
-  const { value, setValue, loading, saving, errors, save } = useEditableSetting<IInscriptionPage>('inscription_page')
+  const { value, setValue, loading, saving, errors, save, dirty } = useEditableSetting<IInscriptionPage>('inscription_page')
 
   const invalid = (key: string) => errors[key] && 'border-red-400'
 
@@ -32,6 +32,7 @@ export function InscriptionSettings() {
       loading={loading}
       onSave={save}
       saving={saving}
+      dirty={dirty}
       action={
         <a href="/inscripcion" target="_blank" rel="noreferrer" className="text-xs text-purple-700 hover:underline whitespace-nowrap">
           Ver página

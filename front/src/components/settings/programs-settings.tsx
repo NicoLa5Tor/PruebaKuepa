@@ -36,7 +36,8 @@ export function ProgramsSettings() {
 
   const toggleStatus = async (program: IProgram, active: boolean) => {
     const response = await programService.upsert({ ...program, status: active ? 'active' : 'inactive' })
-    if (response?.code !== 200) toast({ variant: 'destructive', title: 'No se pudo cambiar el estado' })
+    if (response?.code === 200) toast({ title: active ? 'Programa activado' : 'Programa desactivado', description: program.name })
+    else toast({ variant: 'destructive', title: 'No se pudo cambiar el estado' })
     load()
   }
 
@@ -54,7 +55,7 @@ export function ProgramsSettings() {
   return (
     <SettingsCard
       title="Programas"
-      description="Catálogo que se ofrece en los formularios. Un programa inactivo deja de aparecer pero conserva sus leads."
+      description="Catálogo que se ofrece en los formularios. Un programa inactivo deja de aparecer pero conserva sus leads. Los cambios se guardan automáticamente."
       loading={loading}
       action={
         <Button size="sm" onClick={() => setPanel({ mode: 'create' })} className="gap-1 bg-purple-700 hover:bg-purple-800 text-white">

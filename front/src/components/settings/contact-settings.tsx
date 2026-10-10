@@ -10,7 +10,7 @@ import { SettingsCard } from './settings-card'
 const VARIABLES = ['{first_name}', '{program}', '{adviser}']
 
 export function ContactSettings() {
-  const { value, setValue, loading, saving, errors, save } = useEditableSetting<IContactTemplates>('contact_templates')
+  const { value, setValue, loading, saving, errors, save, dirty } = useEditableSetting<IContactTemplates>('contact_templates')
 
   const invalid = (key: string) => errors[key] && 'border-red-400'
 
@@ -21,6 +21,7 @@ export function ContactSettings() {
       loading={loading}
       onSave={save}
       saving={saving}
+      dirty={dirty}
     >
       {value ? (
         <div className="flex flex-col gap-4">

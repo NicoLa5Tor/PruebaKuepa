@@ -10,12 +10,14 @@ export interface SettingsCardProps {
   // Sin onSave no se muestra el pie con el botón (p. ej. secciones que guardan por fila)
   onSave?: () => void
   saving?: boolean
+  // Con cambios sin guardar se avisa y se habilita el botón
+  dirty?: boolean
   action?: ReactNode
   children: ReactNode
 }
 
 // Contenedor común de cada sección de la configuración
-export function SettingsCard({ title, description, loading, onSave, saving, action, children }: SettingsCardProps) {
+export function SettingsCard({ title, description, loading, onSave, saving, dirty, action, children }: SettingsCardProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
@@ -29,8 +31,9 @@ export function SettingsCard({ title, description, loading, onSave, saving, acti
         {loading ? <Skeleton className="h-40 w-full" /> : children}
       </CardContent>
       {onSave && !loading ? (
-        <CardFooter className="justify-end border-t border-slate-100 pt-4">
-          <Button onClick={onSave} disabled={saving} className="bg-purple-700 hover:bg-purple-800 text-white">
+        <CardFooter className="justify-end gap-3 border-t border-slate-100 pt-4">
+          {dirty ? <span className="text-xs text-amber-700">Tienes cambios sin guardar</span> : null}
+          <Button onClick={onSave} disabled={saving || !dirty} className="bg-purple-700 hover:bg-purple-800 text-white">
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </Button>
         </CardFooter>

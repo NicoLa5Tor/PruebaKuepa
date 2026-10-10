@@ -8,7 +8,7 @@ import { SettingsCard } from './settings-card'
 import { ReorderButtons } from './reorder-buttons'
 
 export function DocumentTypesSettings() {
-  const { value, setValue, loading, saving, errors, save } = useEditableSetting<IDocumentType[]>('document_types')
+  const { value, setValue, loading, saving, errors, save, dirty } = useEditableSetting<IDocumentType[]>('document_types')
   const types = value || []
 
   const update = (index: number, changes: Partial<IDocumentType>) =>
@@ -21,6 +21,7 @@ export function DocumentTypesSettings() {
       loading={loading}
       onSave={save}
       saving={saving}
+      dirty={dirty}
     >
       <ul className="flex flex-col divide-y divide-slate-100">
         {types.map((type, index) => (
