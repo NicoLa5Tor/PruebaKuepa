@@ -1,5 +1,13 @@
 // Códigos HTTP por llave de error, usados por responseUtility.error('dominio.llave')
 export const errors = {
+  auth: {
+    logto: {
+      invalid: { code: 401 },
+      email_required: { code: 400 },
+      not_allowed: { code: 403 },
+      error: { code: 500 },
+    },
+  },
   lead: {
     not_found: { code: 404 },
     validation: { code: 400 },

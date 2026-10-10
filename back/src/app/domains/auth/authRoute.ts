@@ -28,6 +28,8 @@ class AuthRoute {
   private routes: Array<IRouteParams> = [
     // @routes
     { method: 'post', path: '/login', handler: this.controller.login , middleware: [] },
+    // público: recibe el ID token de Logto (Google o Facebook) y entrega nuestra sesión
+    { method: 'post', path: '/logto', handler: this.controller.logto , middleware: [] },
     { method: 'post', path: '/register', handler: this.controller.register , middleware: [auth] },
   ] 
 

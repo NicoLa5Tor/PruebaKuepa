@@ -6,6 +6,8 @@ import {
 import './index.css'
 import router  from './router';
 import { MantineProvider } from '@mantine/core';
+import { LogtoProvider, UserScope, type LogtoConfig } from '@logto/react';
+import { config } from './config';
 
 import '@mantine/core/styles.css';
 
@@ -15,6 +17,13 @@ import moment from 'moment';
 import 'moment/dist/locale/es';
 
 moment.locale('es');
+
+// Inicio de sesión social; el scope Email incluye email y email_verified en el ID token
+const logtoConfig: LogtoConfig = {
+  endpoint: config.logto.endpoint,
+  appId: config.logto.appId,
+  scopes: [UserScope.Email],
+};
 
 (async () => {
   await i18n.init({
@@ -27,7 +36,9 @@ moment.locale('es');
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <MantineProvider>
-      <RouterProvider router={router} />
+      <LogtoProvider config={logtoConfig}>
+        <RouterProvider router={router} />
+      </LogtoProvider>
     </MantineProvider>
   </React.StrictMode>,
 )

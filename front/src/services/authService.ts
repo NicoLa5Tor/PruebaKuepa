@@ -16,6 +16,28 @@ export class AuthService {
     return response
   }
 
+  // Inicio de sesión con Google o Facebook: el back valida el ID token de Logto
+  public async logto (id_token: string, app: any = 'kuepa')  {
+    const response = await post({api:`${this.api || API}/logto`, options: {data: {id_token, app} }})
+    return response
+  }
+
+  /**
+  * Guarda la sesión que entrega el back (token, usuario y permisos).
+  * La comparten el login con contraseña y el inicio de sesión con Logto.
+  */
+  public startSession (response: any, app: string = 'kuepa') {
+    token.set(response.token)
+    user.set(response.user)
+    const can = response.user.homes.find(_h=> _h.app === app)?.can
+    if(can){
+      localStorage.setItem(`kuepa:1.0.0:${user.get()?._id || 'no-user'}:context:access`, JSON.stringify({can}))
+      access.set({
+        can: can
+      })
+    }
+  }
+
   public async token ({token}: {token:string}, app?: any)  {
     const response = await post({api:`${this.api || API}/login`, options: {data: {token, app} }})
     return response

@@ -12,6 +12,18 @@ const UserSchema = new Schema({
   password:{
     type: Schema.Types.String,
   },
+  // Vincula la cuenta social (Google o Facebook vía Logto) con el usuario del CRM
+  email:{
+    type: Schema.Types.String,
+    lowercase: true,
+    trim: true,
+    index: { unique: true, sparse: true },
+  },
+  // sub del token de Logto: fija el vínculo después del primer ingreso
+  logto_id:{
+    type: Schema.Types.String,
+    index: { unique: true, sparse: true },
+  },
   profile: {
     first_name: { type: Schema.Types.String },
     last_name: { type: Schema.Types.String },

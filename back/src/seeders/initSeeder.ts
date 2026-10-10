@@ -15,6 +15,8 @@ export const run = async(_params, console:IConsole) => {
       {
         username: 'useradminket',
         password: process.env.SEED_ADMIN_PASSWORD, 
+        // Opcional: con este email entra por Google o Facebook (Logto)
+        ...(process.env.SEED_ADMIN_EMAIL ? { email: process.env.SEED_ADMIN_EMAIL } : {}),
         number: '000000',
         profile:{
           first_name: 'Kuepa', 

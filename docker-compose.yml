@@ -48,6 +48,9 @@ services:
         # La URL la consume el navegador, por eso apunta al puerto publicado en el host
         VITE_API_URL: http://localhost:7001
         VITE_PUBLIC_URL: http://localhost:7001
+        # Logto: app SPA "Kuepa CRM" (el App ID es público)
+        VITE_LOGTO_ENDPOINT: https://logto.arisma.com.co
+        VITE_LOGTO_APP_ID: wpqq5ute5og9jfags2mom
     restart: unless-stopped
     ports:
       - "5173:80"

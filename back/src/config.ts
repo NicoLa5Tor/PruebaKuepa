@@ -24,6 +24,11 @@ export default {
     }
   },
   jwt: process.env.JWT_SECRET,
+  // Inicio de sesión social: Logto autentica y el back valida su ID token
+  logto: {
+    endpoint: process.env.LOGTO_ENDPOINT,
+    app_id: process.env.LOGTO_APP_ID,
+  },
   port: Number(process.env.PORT) || 7001,
   public_url: process.env.PUBLIC_URL || 'http://localhost:7001'
 }

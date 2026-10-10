@@ -7,6 +7,7 @@ import { AuthService } from "@/services/authService"
 import { FormEvent, useEffect, useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { hasSession } from "@/util/session"
+import { SocialLogin } from "@/components/auth/social-login"
 
 
 
@@ -67,15 +68,7 @@ function Login () {
     e.preventDefault()
     const response = await authService.login({username, password}, 'kuepa')
     if(response.token){
-      token.set(response.token)
-      user.set(response.user)
-      const can = response.user.homes.find(_h=> _h.app === 'kuepa')?.can
-      if(can){
-        localStorage.setItem(`kuepa:1.0.0:${user.get()?._id || 'no-user'}:context:access`, JSON.stringify({can}))
-        access.set({
-          can: can
-        })
-      }
+      authService.startSession(response)
       location(from)
     } else {
       setError('Usuario o contraseña incorrectos')
@@ -134,6 +127,7 @@ function Login () {
                     <button disabled={loading} data-onclick="login" className={`to-send disabled:animate-pulse transition-all leading-none flex font-title justify-center text-white bg-${error ? 'red' : 'orange'}-500 text-lg mx-2 cursor-pointer hover:bg-white w-32 content-center  px-2 pt-2 pb-2 rounded-full shadow-md hover:text-${error ? 'red': 'orange'}-500`}>Conectarme</button>
                   </div>
                 </form>
+                <SocialLogin onSuccess={() => location(from)} />
               </div>
             </div>
           </div>

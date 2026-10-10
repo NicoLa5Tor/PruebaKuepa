@@ -11,6 +11,8 @@ import Settings from './pages/settings/settings';
 
 const Login = lazy(() => import('@/pages/auth/login')); 
 const Inscription = lazy(() => import('@/pages/inscription/inscription'));
+const Callback = lazy(() => import('@/pages/auth/callback'));
+const SocialStart = lazy(() => import('@/pages/auth/social-start'));
 const router = createBrowserRouter([
   {
     path: '/auth',
@@ -24,6 +26,22 @@ const router = createBrowserRouter([
     element: 
     <Suspense fallback={<Loading mode="logo" />}>
       <Login />
+    </Suspense>
+  },
+  {
+    // Pública: primera página del popup de inicio de sesión social
+    path: '/auth/social/:target',
+    element: 
+    <Suspense fallback={<Loading mode="logo" />}>
+      <SocialStart />
+    </Suspense>
+  },
+  {
+    // Pública: retorno de Logto (Google o Facebook)
+    path: '/callback',
+    element: 
+    <Suspense fallback={<Loading mode="logo" />}>
+      <Callback />
     </Suspense>
   },
   {
