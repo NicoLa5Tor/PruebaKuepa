@@ -17,12 +17,13 @@ services:
     restart: unless-stopped
     ports:
       - "7001:7001"
+    # Mismo archivo que usa el back sin Docker (JWT_SECRET, SEED_ADMIN_PASSWORD...)
+    env_file: ./back/.env
+    # Estas tienen prioridad sobre env_file: dentro de Docker Mongo es el servicio "mongo"
     environment:
       MONGO_URI: mongodb://mongo:27017/kuepa_test
       PORT: 7001
       PUBLIC_URL: http://localhost:7001
-      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (ver .env.example)}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
     depends_on:
       mongo:
         condition: service_healthy
