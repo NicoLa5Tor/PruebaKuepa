@@ -20,7 +20,6 @@ export interface ILeadInput {
   interestProgram?: string
   document_type?: string
   document?: string
-  trackings?: any[]
 }
 
 type IFieldErrors = Record<string, 'required' | 'invalid' | 'not_found'>
@@ -30,6 +29,7 @@ const DOCUMENT_TYPES = ['cc', 'ti', 'pp', 'nt']
 const OPEN_STATUSES = ['active', 'grading']
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 const PHONE_REGEX = /^\+?\d{7,15}$/
+const DOCUMENT_REGEX = /^[a-zA-Z0-9]{4,20}$/
 
 class LeadService {
 
@@ -52,7 +52,6 @@ class LeadService {
       document: text(_params.document)?.replace(/[\s.]/g, ''),
     }
     if (_params._id) data._id = _params._id
-    if (Array.isArray(_params.trackings)) data.trackings = _params.trackings
     return data
   }
 
@@ -66,7 +65,7 @@ class LeadService {
     if (data.email && !EMAIL_REGEX.test(data.email)) fields.email = 'invalid'
     if (data.mobile_phone && !PHONE_REGEX.test(data.mobile_phone)) fields.mobile_phone = 'invalid'
     if (data.document_type && !DOCUMENT_TYPES.includes(data.document_type)) fields.document_type = 'invalid'
-    if (data.document && !/^[a-zA-Z0-9]{4,20}$/.test(data.document)) fields.document = 'invalid'
+    if (data.document && !DOCUMENT_REGEX.test(data.document)) fields.document = 'invalid'
     if (data._id && !mongoose.isValidObjectId(data._id)) fields._id = 'invalid'
 
     if (data.interestProgram) {
@@ -83,9 +82,17 @@ class LeadService {
 
   /**
   * El prospecto como persona es un Third de tipo 'cli'; el lead es su interés en un programa.
-  * Se reutiliza el contacto si ya existe con el mismo documento o email.
+  * Se identifica solo por documento: el email puede ser compartido (p. ej. el de un acudiente).
   */
-  private async upsertContact (data: ILeadInput) {
+  private async findContact (data: ILeadInput) {
+    return await Third.findOne({
+      type: 'cli',
+      document_type: data.document_type,
+      document: data.document,
+    }).lean()
+  }
+
+  private async saveContact (data: ILeadInput, existing?) {
     const contact_data = {
       first_name: data.first_name,
       last_name: data.last_name,
@@ -98,17 +105,9 @@ class LeadService {
       status: 'active',
     }
 
-    const contact = await Third.findOne({
-      type: 'cli',
-      $or: [
-        { document_type: data.document_type, document: data.document },
-        { email: data.email },
-      ]
-    }).lean()
-
-    if (contact) {
-      await Third.updateOne({ _id: contact._id }, { $set: contact_data })
-      return contact._id
+    if (existing) {
+      await Third.updateOne({ _id: existing._id }, { $set: contact_data })
+      return existing._id
     }
 
     const created = await Third.create(contact_data)
@@ -119,7 +118,7 @@ class LeadService {
   * Persiste el lead. Recibe datos ya validados más las referencias
   * que el servidor resuelve (adviser, campaign, adnetwork).
   */
-  private async save (data: ILeadInput & { contact: any, adviser?: any, campaign?: any, adnetwork?: any, status?: string }) {
+  private async save (data: ILeadInput & { contact: any, adviser?: any, campaign?: any, adnetwork?: any }) {
     const { document_type, document, _id, ...lead_data } = data as any
     lead_data.full_name = `${data.first_name} ${data.last_name}`
 
@@ -133,6 +132,14 @@ class LeadService {
   private async findAdviser (user_logged) {
     if (!user_logged) return null
     return await Third.findOne({ user: user_logged }).lean()
+  }
+
+  private async hasOpenLead (contact, exclude_id?: string) {
+    return await Lead.exists({
+      contact,
+      status: { $in: OPEN_STATUSES },
+      ...(exclude_id ? { _id: { $ne: exclude_id } } : {}),
+    })
   }
 
   private escapeRegex (value: string) {
@@ -150,33 +157,21 @@ class LeadService {
       const adviser = await this.findAdviser(_params.user_logged)
       if (!adviser) return responseUtility.error('third.not_found')
 
+      // Un asesor solo puede editar sus propios leads
       if (data._id) {
-        const exists = await Lead.exists({ _id: data._id })
+        const exists = await Lead.exists({ _id: data._id, adviser: adviser._id })
         if (!exists) return responseUtility.error('lead.not_found')
       }
 
-      const contact = await this.upsertContact(data)
-
-      const duplicated = await Lead.exists({
-        contact,
-        status: { $in: OPEN_STATUSES },
-        ...(data._id ? { _id: { $ne: data._id } } : {}),
-      })
-      if (duplicated) {
+      // Se valida el duplicado antes de escribir para que un 409 no modifique datos
+      const existing = await this.findContact(data)
+      if (existing && await this.hasOpenLead(existing._id, data._id)) {
         return responseUtility.error('lead.duplicate', null, { code: 409 })
       }
 
+      const contact = await this.saveContact(data, existing)
+
       const extra: any = {}
-      let last_tracking = data?.trackings?.[data.trackings.length - 1]
-      if(last_tracking?.new){
-        const tracking = await Tracking.findOne({_id: last_tracking.tracking}).lean()
-        if(tracking?.target_status){
-          extra.status = tracking.target_status
-        }
-        if(!last_tracking.has_next_date && extra.status !== 'sold'){
-          extra.status = 'dropped'
-        }
-      }
 
       // Un lead creado desde el CRM entra por el canal manual y la campaña activa del asesor
       if (!data._id) {
@@ -267,7 +262,6 @@ class LeadService {
     try{
       const data = this.pick(_params)
       delete data._id
-      delete data.trackings
 
       const fields = await this.validate(data)
       if (Object.keys(fields).length) {
@@ -281,7 +275,9 @@ class LeadService {
       const adviser = campaign?.users?.[0]?.third
       if (!adviser) return responseUtility.error('campaign.not_found')
 
-      const contact = await this.upsertContact(data)
+      // Endpoint anónimo: nunca modifica un contacto existente, solo crea si no existe
+      const existing = await this.findContact(data)
+      const contact = existing?._id || await this.saveContact(data)
 
       const create_interaction = {
         target: 'human',
@@ -312,7 +308,7 @@ class LeadService {
       }
 
       // Si ya tiene un lead abierto se registra el nuevo interés como seguimiento
-      let lead = await Lead.findOne({ contact, status: {$in: OPEN_STATUSES}}).lean()
+      let lead: any = await Lead.findOne({ contact, status: {$in: OPEN_STATUSES}}).lean()
       if(lead){
         const tracking = await Tracking.findOne({ 'defaults.again': true}).lean()
         if (tracking) {
@@ -443,11 +439,16 @@ class LeadService {
     }
   }
 
-  public async get (_params:{_id:string}) {
+  public async get (_params:{_id:string, user_logged?:string}) {
     try{
       if (!mongoose.isValidObjectId(_params._id)) return responseUtility.error('lead.not_found')
 
-      const lead = await Lead.findOne({_id: _params._id})
+      // Mismo criterio que list: el asesor solo ve sus leads
+      const where: any = { _id: _params._id }
+      const third = await this.findAdviser(_params.user_logged)
+      if (third) where.adviser = third._id
+
+      const lead = await Lead.findOne(where)
       .populate({
         path: 'contact',
         select: 'first_name last_name incremental document_type document number email',

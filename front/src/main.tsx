@@ -10,6 +10,10 @@ import { MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
 
 import i18n from './util/i18n';
+import moment from 'moment';
+import 'moment/locale/es';
+
+moment.locale('es');
 
 (async () => {
   await i18n.init({

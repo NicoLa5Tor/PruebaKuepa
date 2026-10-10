@@ -10,7 +10,6 @@ export const errors = {
     not_found: { code: 404 },
   },
   program: {
-    not_found: { code: 404 },
     error: { code: 500 },
   },
   campaign: {

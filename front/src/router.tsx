@@ -9,6 +9,7 @@ import { RequireAuth } from './components/require-auth';
 import Home from './pages/home/home';
 
 const Login = lazy(() => import('@/pages/auth/login')); 
+const Inscription = lazy(() => import('@/pages/inscription/inscription'));
 const router = createBrowserRouter([
   {
     path: '/auth',
@@ -22,6 +23,14 @@ const router = createBrowserRouter([
     element: 
     <Suspense fallback={<Loading mode="logo" />}>
       <Login />
+    </Suspense>
+  },
+  {
+    // Pública: formulario de inscripción para prospectos
+    path: '/inscripcion',
+    element: 
+    <Suspense fallback={<Loading mode="logo" />}>
+      <Inscription />
     </Suspense>
   },
   {
