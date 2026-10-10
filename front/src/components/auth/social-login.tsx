@@ -51,7 +51,7 @@ export function SocialLogin({ onSuccess }: SocialLoginProps) {
     if (event.origin !== window.location.origin || event.source !== popupRef.current || data?.type !== SOCIAL_LOGIN_MESSAGE) return
 
     stopWatching()
-    if (data.response?.token) {
+    if (data.response?.user) {
       authService.startSession(data.response)
       onSuccess()
     } else {

@@ -44,7 +44,8 @@ class App {
 
     this.app.use(urlencoded({ extended: false }))
 
-    this.app.use(cors())
+    // credentials exige un origen concreto: el navegador no acepta * junto con cookies
+    this.app.use(cors({ origin: global.env.front_origin, credentials: true }))
     this.app.use(request_mw())
     
     this.app.get('/', (req, res) => {

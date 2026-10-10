@@ -41,5 +41,7 @@ export default {
     app_id: process.env.LOGTO_APP_ID,
   },
   port: Number(process.env.PORT) || 7001,
-  public_url: process.env.PUBLIC_URL || 'http://localhost:7001'
+  public_url: process.env.PUBLIC_URL || 'http://localhost:7001',
+  // Origen del front. La cookie de sesión solo se acepta desde aquí.
+  front_origin: process.env.FRONT_ORIGIN || 'http://localhost:5173'
 }

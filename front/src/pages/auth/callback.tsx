@@ -21,9 +21,9 @@ function Callback () {
 
   const finish = (response: any) => {
     if (isLoginPopup()) {
-      notifyOpener(response?.token ? { response } : { error: response?.message || DEFAULT_ERROR })
+      notifyOpener(response?.user ? { response } : { error: response?.message || DEFAULT_ERROR })
       window.close()
-    } else if (response?.token) {
+    } else if (response?.user) {
       authService.startSession(response)
       navigate('/home', { replace: true })
     } else {

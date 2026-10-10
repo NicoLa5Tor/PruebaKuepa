@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 import config from 'config'
 import { thirdService } from '@app/domains/third/thirdService'
 import { databaseUtility } from '@core/utilities/dataBaseUtility'
+import { readAuthCookie } from '@core/utilities/authCookie'
 
 
 class SocketUtility {
@@ -25,13 +26,13 @@ class SocketUtility {
 
   public init = async (server: HttpServer) => {
     try{
-      // Mismo criterio que cors() en app.ts
-      this.io = new Server(server, { cors: { origin: '*' } })
+      // Mismo origen y credentials que cors() en app.ts: el handshake lleva la cookie
+      this.io = new Server(server, { cors: { origin: config.front_origin, credentials: true } })
 
       // Misma verificación que authMiddleware, pero en el handshake del socket
       this.io.use(async (socket, next) => {
         try{
-          const token = `${socket.handshake.auth?.token || ''}`.replace('Bearer ', '')
+          const token = readAuthCookie(socket.handshake.headers)
           const verify: any = jwt.verify(token, config.jwt)
           const adviser = await thirdService.findByUser(verify?.user)
           if (!adviser) return next(new Error('unauthorize'))

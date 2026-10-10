@@ -2,7 +2,7 @@
 
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { useStore } from "@nanostores/react"
-import { access,  token, user } from "@/atoms/kuepa"
+import { access, user } from "@/atoms/kuepa"
 import { AuthService } from "@/services/authService"
 import { FormEvent, useEffect, useRef, useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -28,7 +28,6 @@ function Login () {
 
   const [loading, setLoading] = useState(false)
 
-  const $token = useStore(token);
   const $access = useStore(access);
   const $user = useStore(user);
 
@@ -37,20 +36,12 @@ function Login () {
 
   const init = async ()=>{
     const response = await authService.token({token:_token ||''}, 'kuepa')
-    if(response.token){
-      token.set(response.token)
-      user.set(response.user)
-      if(response.home){
-        const can = response.user.homes.find(_h=> _h.app === 'kuepa')?.can
-        access.set({
-          can: can,
-          home: response.home
-        })
-        setError(null)
-        location(`/home`)
-      } else {
-        setError('Usuario o contraseña incorrectos')
-      }
+    if(response?.user){
+      authService.startSession(response)
+      setError(null)
+      location(`/home`)
+    } else {
+      setError('Usuario o contraseña incorrectos')
     }
   }
 
@@ -64,7 +55,7 @@ function Login () {
         location(from)
       },1000)
     } 
-  },[_token, $token])
+  },[_token, $user])
 
   const authService = new AuthService('/auth')
 
@@ -78,7 +69,7 @@ function Login () {
     setError(null)
 
     const response = await authService.login({username, password, captcha_token: captchaToken}, 'kuepa')
-    if(response?.token){
+    if(response?.user){
       authService.startSession(response)
       location(from)
     } else {
@@ -93,7 +84,7 @@ function Login () {
   return (
     <>
       {
-        $token && $access && $user && hasSession() ? 
+        $access && $user && hasSession() ? 
           <div className="flex w-[100vw] h-[100vh] items-center justify-center">
             <div className="z-20 flex items-center text-4xl bg-white w-fit px-4 py-2 rounded-md font-bold">
               <img src="/logo.jpeg" alt="logo" className="w-36 h-36 mr-2 animate-bounce" />

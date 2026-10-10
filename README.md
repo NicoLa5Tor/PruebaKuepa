@@ -94,6 +94,7 @@ CRM ──popup──► Logto ──► Google / Facebook
 ### Seguridad
 - Las rutas del CRM están protegidas en el front (`RequireAuth`) y en el back (`authMiddleware`).
 - `user_logged` solo se toma del middleware, nunca del body.
+- La sesión es la cookie HttpOnly `kuepa_session` (30 días, `SameSite=Lax`). El JSON del login no trae el JWT y el front no lo guarda. CORS solo acepta `FRONT_ORIGIN` y permite esa cookie.
 - Los endpoints reciben una lista blanca de campos.
 - Los secretos viven en `.env` y no se suben al repositorio.
 - **Captcha (Cloudflare Turnstile)** en el login con contraseña y en el formulario público. El back lo verifica (`captchaMiddleware`) y falla cerrado si no hay secreto configurado. `Dev/.env` trae las **llaves de prueba oficiales** de Cloudflare (siempre pasan, el widget muestra "Solo para pruebas"). `Prod/.env` trae la site key y el secreto del widget real. El hostname del sitio tiene que estar en el widget de Cloudflare.

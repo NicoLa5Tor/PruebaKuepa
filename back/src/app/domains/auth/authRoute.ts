@@ -32,6 +32,7 @@ class AuthRoute {
     { method: 'post', path: '/login', handler: this.controller.login , middleware: [rateLimit({ name: 'login', max: 10, windowSeconds: 15 * 60 }), captcha({ skip: (req) => !!req.body?.token })] },
     // público: recibe el ID token de Logto (Google o Facebook) y entrega nuestra sesión
     { method: 'post', path: '/logto', handler: this.controller.logto , middleware: [rateLimit({ name: 'logto', max: 20, windowSeconds: 15 * 60 })] },
+    { method: 'post', path: '/logout', handler: this.controller.logout , middleware: [] },
   ] 
 
   public init () {

@@ -1,15 +1,12 @@
 import { io, Socket } from "socket.io-client"
 import { config } from "../config"
-import { token } from "../atoms/kuepa"
 
 let socket: Socket | null = null
 
-// Conexión única por pestaña. auth es una función para que cada reconexión use el token vigente
+// La cookie HttpOnly viaja en el handshake. El script no la copia a auth.
 export const connectSocket = () => {
   if (!socket) {
-    socket = io(config.api, {
-      auth: (cb) => cb({ token: token.get() }),
-    })
+    socket = io(config.api, { withCredentials: true })
   }
   return socket
 }

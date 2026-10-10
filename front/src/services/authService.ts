@@ -22,11 +22,11 @@ export class AuthService {
   }
 
   /**
-  * Guarda la sesión que entrega el back (token, usuario y permisos).
-  * La comparten el login con contraseña y el inicio de sesión con Logto.
+  * Guarda el usuario y los permisos. El JWT no viene en la respuesta:
+  * el back lo dejó en una cookie HttpOnly.
   */
   public startSession (response: any, app: string = 'kuepa') {
-    token.set(response.token)
+    token.set(null)
     user.set(response.user)
     const can = response.user.homes.find(_h=> _h.app === app)?.can
     if(can){
@@ -54,6 +54,7 @@ export class AuthService {
 
   public async logout ()  {
     disconnectSocket()
+    await post({api:`${this.api || API}/logout`, options: {data: {}}})
     user.set(null)
     token.set(null)
     
