@@ -1,0 +1,28 @@
+# Mongo y su disco. No publica puertos. Crea la red kuepa_app.
+# Se levanta primero: volume, luego project, nginx y cloudflare.
+name: kuepa-volume
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: kuepa-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      app:
+        aliases:
+          - mongo
+
+networks:
+  app:
+    name: kuepa_app
+
+volumes:
+  mongo_data:
+    name: kuepa_prod_mongo

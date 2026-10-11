@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/sidebar"
 import { useTranslation } from "react-i18next"
 import { useFullscreen } from "@mantine/hooks"
-import { Separator } from "@radix-ui/react-dropdown-menu"
 import { LuChevronDown, LuChevronRight } from "react-icons/lu"
 
 export function TopMenu() {
@@ -48,9 +47,6 @@ export function TopMenu() {
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
-            <DropdownMenuItem className={`hover:bg-slate-50/50`}>Soporte Tecnico</DropdownMenuItem>
-            <Separator className="my-2" />
-            <DropdownMenuItem className={`hover:bg-slate-50/50`}>Kuepa</DropdownMenuItem>
             {
             !fullscreen ? 
               <DropdownMenuItem onClick={toggle} className={`hover:bg-slate-50/50`}>Pantalla completa</DropdownMenuItem>

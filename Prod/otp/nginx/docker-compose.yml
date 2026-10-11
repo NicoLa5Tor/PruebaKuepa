@@ -1,0 +1,28 @@
+# Entrada de producción. No publica puertos.
+# Se une a kuepa_app (la crea otp/volume) y crea kuepa_edge para el túnel.
+# En Cloudflare el hostname público del túnel apunta a http://nginx:80.
+name: kuepa-nginx
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: kuepa-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./cloudflare.conf:/etc/nginx/cloudflare.conf:ro
+    networks:
+      app:
+        aliases:
+          - nginx
+      edge: {}
+
+networks:
+  app:
+    name: kuepa_app
+    external: true
+  edge:
+    name: kuepa_edge
+    ipam:
+      config:
+        - subnet: 172.31.10.0/24

@@ -1,0 +1,17 @@
+# Túnel de salida hacia Cloudflare. No abre puertos en el servidor.
+# El token sale de Zero Trust. El hostname público se configura allá y su servicio es http://nginx:80.
+name: kuepa-cloudflare
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    env_file: .env
+    networks:
+      - edge
+
+networks:
+  edge:
+    name: kuepa_edge
+    external: true

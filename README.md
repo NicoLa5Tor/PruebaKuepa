@@ -6,9 +6,9 @@ Prueba técnica desarrollada por **Nicolás Rodríguez Torres**.
 
 ## Levantar con Docker
 
-Copia `Dev/.env.example` a `Dev/.env` y define `JWT_SECRET` y `SEED_ADMIN_PASSWORD`. En producción, copia `Prod/.env.example` a `Prod/.env`. `back` no tiene `.env`.
+Copia `Dev/.env.example` a `Dev/.env` y define `JWT_SECRET` y `SEED_ADMIN_PASSWORD`. En producción, copia `Prod/otp/project/.env.example` a `Prod/otp/project/.env` y `Prod/otp/cloudflare/.env.example` a `Prod/otp/cloudflare/.env`. `back` no tiene `.env`.
 
-El compose de desarrollo está en `Dev/`. Ahí el captcha usa las llaves de prueba de Cloudflare. `Prod/` guarda el compose con el widget real y no se levanta en localhost.
+El compose de desarrollo está en `Dev/`. Ahí el captcha usa las llaves de prueba de Cloudflare. Producción vive en `Prod/otp/` (volume, project, nginx, cloudflare), sin puertos publicados, y no se levanta en localhost.
 
 ```bash
 cp Dev/.env.example Dev/.env
@@ -97,7 +97,7 @@ CRM ──popup──► Logto ──► Google / Facebook
 - La sesión es la cookie HttpOnly `kuepa_session` (30 días, `SameSite=Lax`). El JSON del login no trae el JWT y el front no lo guarda. CORS solo acepta `FRONT_ORIGIN` y permite esa cookie.
 - Los endpoints reciben una lista blanca de campos.
 - Los secretos viven en `.env` y no se suben al repositorio.
-- **Captcha (Cloudflare Turnstile)** en el login con contraseña y en el formulario público. El back lo verifica (`captchaMiddleware`) y falla cerrado si no hay secreto configurado. `Dev/.env` trae las **llaves de prueba oficiales** de Cloudflare (siempre pasan, el widget muestra "Solo para pruebas"). `Prod/.env` trae la site key y el secreto del widget real. El hostname del sitio tiene que estar en el widget de Cloudflare.
+- **Captcha (Cloudflare Turnstile)** en el login con contraseña y en el formulario público. El back lo verifica (`captchaMiddleware`) y falla cerrado si no hay secreto configurado. `Dev/.env` trae las **llaves de prueba oficiales** de Cloudflare (siempre pasan, el widget muestra "Solo para pruebas"). `Prod/otp/project/.env` trae la site key y el secreto del widget real. El hostname del sitio tiene que estar en el widget de Cloudflare.
 - **Límite de peticiones por IP** (`rateLimitMiddleware`), guardado en Redis y compartido entre instancias, con respaldo en memoria si Redis cae. Al exceder responde `429` con `Retry-After`:
 
   | Ruta | Límite |
@@ -109,7 +109,7 @@ CRM ──popup──► Logto ──► Google / Facebook
   Detrás de un proxy, `TRUST_PROXY=true` para leer la IP real.
 - **Login:** usuario inexistente y contraseña incorrecta responden igual (`401 auth.login.error`), así que no se puede averiguar qué usuarios existen.
 - **Usuarios:** solo autoservicio sobre el propio usuario (`/user/upsert` edita el perfil con lista blanca; `/user/upsert-address`). El base no aplica un rol de admin (`can()` siempre es `true`), así que listar, ver, borrar, registrar o editar a otros usuarios no se expone por HTTP.
-- **Pendiente para producción:** `Dev/docker-compose.yml` publica MongoDB (`27017`) **sin contraseña**. Fuera de un entorno local hay que quitar esa publicación (o limitarla a `127.0.0.1`) y activar autenticación en Mongo. `Prod/` todavía no está listo para desplegar.
+- **Pendiente para producción:** `Dev/docker-compose.yml` publica MongoDB (`27017`) **sin contraseña**. Fuera de un entorno local hay que quitar esa publicación (o limitarla a `127.0.0.1`) y activar autenticación en Mongo. En `Prod/otp` Mongo no publica puertos; el túnel todavía necesita `TUNNEL_TOKEN` y el hostname público en Zero Trust (`http://nginx:80`).
 
 ## Levantar sin Docker
 
@@ -132,8 +132,8 @@ cd front && npm i && npm run dev
 | `SEED_ADMIN_EMAIL` | back (seeder) | vacío; con él, el usuario de prueba entra por Google o Facebook |
 | `LOGTO_ENDPOINT` / `LOGTO_APP_ID` | back | vacíos; necesarios para el inicio de sesión social |
 | `VITE_LOGTO_ENDPOINT` / `VITE_LOGTO_APP_ID` | front (build) | definidos en `Dev/docker-compose.yml` |
-| `TURNSTILE_SECRET` | back | llave de prueba en `Dev/.env`; secreto real en `Prod/.env` |
-| `VITE_TURNSTILE_SITE_KEY` | front (build) | llave de prueba en `Dev/.env`; site key real en `Prod/.env` |
+| `TURNSTILE_SECRET` | back | llave de prueba en `Dev/.env`; secreto real en `Prod/otp/project/.env` |
+| `VITE_TURNSTILE_SITE_KEY` | front (build) | llave de prueba en `Dev/.env`; site key real en `Prod/otp/project/.env` |
 | `TRUST_PROXY` | back | `false` |
 | `VITE_API_URL` | front (build) | `http://localhost:7001` |
 
