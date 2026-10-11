@@ -10,11 +10,6 @@ const user = persistentAtom(`kuepa:1.0:context:user`,null, {
   decode: JSON.parse,
 }) 
 
-const token = persistentAtom(`kuepa:1.0:context:token`,null, {
-  encode: JSON.stringify,
-  decode: JSON.parse,
-}) 
-
 const access = persistentAtom(`kuepa:1.0:${user.get()?._id || 'no-user'}:context:context:access`,null, {
   encode: JSON.stringify,
   decode: JSON.parse,
@@ -115,4 +110,4 @@ const loading = atom(false)
 // La fuente de verdad es el back: se carga al entrar y se actualiza por socket
 const notifications = atom<{ list: INotification[], unread: number }>({ list: [], unread: 0 })
 
-export { token, user, loading,access, can, theme, app, attendance, device, booking, notifications, toggleFavorites, toggleRecent, unToggleRecent }
+export { user, loading,access, can, theme, app, attendance, device, booking, notifications, toggleFavorites, toggleRecent, unToggleRecent }

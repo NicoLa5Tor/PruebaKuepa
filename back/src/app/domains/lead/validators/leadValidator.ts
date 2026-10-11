@@ -8,6 +8,8 @@ import { globalService } from "@app/domains/global/globalService"
 import { Lead, Program } from "@app/models"
 
 // @import_types
+import { IFieldErrors } from "@app/resources/errors/fieldErrors"
+
 export interface ILeadInput {
   _id?: string
   first_name?: string
@@ -19,8 +21,6 @@ export interface ILeadInput {
   document?: string
   status?: string
 }
-
-export type IFieldErrors = Record<string, 'required' | 'invalid' | 'not_found'>
 
 const REQUIRED = ['first_name', 'last_name', 'email', 'mobile_phone', 'interestProgram', 'document_type', 'document']
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/

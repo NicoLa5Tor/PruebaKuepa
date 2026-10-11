@@ -1,5 +1,5 @@
 import { app } from "@/atoms/kuepa"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { TbBrandWhatsapp, TbEye, TbMail, TbPencil, TbPlus, TbSearch, TbTrash } from "react-icons/tb"
 import { Button } from "@/components/ui/button"
@@ -52,9 +52,14 @@ export default function Leads (props?: LeadsProps) {
     })
   }, [])
 
+  // Solo cuenta la última consulta: una búsqueda lenta no pisa el resultado de una más nueva
+  const lastRequest = useRef(0)
+
   const load = useCallback(async (filters?: string) => {
+    const request = ++lastRequest.current
     setLoading(true)
     const response = await leadService.list({ filters })
+    if (request !== lastRequest.current) return
     setLeads(response?.list || [])
     setLoading(false)
   }, [])

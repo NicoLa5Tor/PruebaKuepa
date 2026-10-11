@@ -18,7 +18,7 @@ services:
           - redis
 
   back:
-    build: ../../../back
+    image: nicoscale/crm-back-kuepa:latest
     restart: unless-stopped
     env_file: .env
     environment:
@@ -33,14 +33,7 @@ services:
           - back
 
   front:
-    build:
-      context: ../../../front
-      args:
-        VITE_API_URL: ${VITE_API_URL}
-        VITE_PUBLIC_URL: ${VITE_PUBLIC_URL}
-        VITE_LOGTO_ENDPOINT: ${VITE_LOGTO_ENDPOINT}
-        VITE_LOGTO_APP_ID: ${VITE_LOGTO_APP_ID}
-        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY}
+    image: nicoscale/crm-front-kuepa:latest
     restart: unless-stopped
     depends_on:
       - back

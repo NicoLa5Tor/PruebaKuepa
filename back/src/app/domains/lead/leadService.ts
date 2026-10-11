@@ -89,6 +89,11 @@ class LeadService {
     })
   }
 
+  // Los datos de una persona solo los corrige un asesor si ningún otro tiene leads con ella
+  private async canEditContact (contact, adviser) {
+    return !await Lead.exists({ contact, adviser: { $ne: adviser } })
+  }
+
   private escapeRegex (value: string) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   }
@@ -116,7 +121,9 @@ class LeadService {
         return responseUtility.error('lead.duplicate', null, { code: 409 })
       }
 
-      const contact = await thirdService.saveClient(data, existing)
+      const contact = existing && !await this.canEditContact(existing._id, adviser._id)
+        ? existing._id
+        : await thirdService.saveClient(data, existing)
 
       const extra: any = {}
 
@@ -135,66 +142,6 @@ class LeadService {
 
       return responseUtility.success({
         object: lead
-      })
-    } catch (error) {
-      console.log('error', error)
-      return responseUtility.error('lead.error')
-    }
-  }
-
-  public async adviserInfo (_params){
-    try{
-      const third = await thirdService.findByUser(_params.user_logged)
-      if(!third) return responseUtility.error('third.not_found',null, {code: 404});
-
-      const where_campaigns = {
-        status: 'active',
-      }
-      let select_campaigns = 'name users.$'
-      if(_params.campaign){
-        where_campaigns['_id'] = _params.campaign
-        select_campaigns = 'name users'
-      } else {
-        where_campaigns['users.third'] = third._id
-      }
-
-      const campaigns = await Campaign.find(where_campaigns)
-      .select(select_campaigns)
-      .sort({created_at:1})
-      .lean()
-
-      const _adnetworks = {}
-      campaigns.forEach(_c=>{
-        _c.users.forEach(_u=>{
-          _u.adnetworks.forEach(_a=>{
-            _adnetworks[_a] = _c._id
-          })
-        })
-      })
-
-      const [ adnetworks, leads, trackings] = await Promise.all([
-        Adnetwork.find({
-          status: 'active',
-          _id: { $in: Object.keys(_adnetworks) }
-        })
-        .lean(),
-        Lead.find({
-          campaign: { $in: campaigns.map((_c:any)=>{return _c._id}) },
-          status: {$in: OPEN_STATUSES},
-          contact:  _params.contact
-        })
-        .lean(),
-        Tracking.find({
-          status: 'active'
-        })
-      ])
-
-      return responseUtility.success({
-        campaigns,
-        leads,
-        adnetworks,
-        parser: _adnetworks,
-        trackings
       })
     } catch (error) {
       console.log('error', error)

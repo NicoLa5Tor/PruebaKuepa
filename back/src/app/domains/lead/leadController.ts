@@ -20,53 +20,38 @@ class LeadController {
 
   constructor () {}
 
-  /**
-  * _data() mezcla params, query y body, y el body pisa a params.
-  * user_logged lo pone authMiddleware en req.params, así que se vuelve a fijar
-  * al final para que el cliente no pueda suplantarlo desde el body.
-  */
-  private params = (req: Request) => ({
-    ...req._data(),
-    user_logged: req.params.user_logged
-  })
-
-  public adviserInfo = async(req: Request, res: Response) => {
-    const response = await this.service.adviserInfo(this.params(req))
-    return responseUtility.build(res, response)
-  }
-
   public upsert = async(req: Request, res: Response) => {
-    const response = await this.service.upsert(this.params(req))
+    const response = await this.service.upsert(req._data())
     return responseUtility.build(res, response)
   }
 
   public list = async(req: Request, res: Response) => {
-    const response = await this.service.list(this.params(req))
+    const response = await this.service.list(req._data())
     return responseUtility.build(res, response)
   }
 
   public delete = async(req: Request, res: Response) => {
-    const response = await this.service.delete(this.params(req))
+    const response = await this.service.delete(req._data())
     return responseUtility.build(res, response)
   }
 
   public contact = async(req: Request, res: Response) => {
-    const response = await this.service.contact(this.params(req))
+    const response = await this.service.contact(req._data())
     return responseUtility.build(res, response)
   }
 
   public stats = async(req: Request, res: Response) => {
-    const response = await this.service.stats(this.params(req))
+    const response = await this.service.stats(req._data())
     return responseUtility.build(res, response)
   }
 
   public get = async(req: Request, res: Response) => {
-    const response = await this.service.get(this.params(req))
+    const response = await this.service.get(req._data())
     return responseUtility.build(res, response)
   }
 
   public external = async(req: Request, res: Response) => {
-    const response = await this.service.external(this.params(req))
+    const response = await this.service.external(req._data())
     return responseUtility.build(res, response)
   }
 }

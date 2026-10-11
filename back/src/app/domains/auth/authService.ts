@@ -42,29 +42,17 @@ class AuthService {
   
   public async login (_params) {
     try{
-      let user
-      let _token
-      if(_params.token){
-        try{
-          _token = jwt.verify(_params.token, config.jwt)
-        } catch (error) { }
-        if(_token?.user){
-          user = await this.withRoles(User.findOne({_id: _token.user})).lean()
-        }
+      // Solo texto: un objeto ({ $ne: null }) llegaría a Mongo como operador
+      if (typeof _params.username !== 'string' || typeof _params.password !== 'string') {
+        return responseUtility.error('auth.login.error')
       }
-      if(!user) {
-        user = await this.withRoles(User.findOne({username:_params.username})).lean()
+
+      const user = await this.withRoles(User.findOne({ username: _params.username })).lean()
+      // Mismo error para usuario inexistente y contraseña incorrecta: no revela si el usuario existe
+      if (!user || !await this.compare(_params.password, user.password)) {
+        return responseUtility.error('auth.login.error')
       }
-      // Mismo error que la contraseña incorrecta: no revela si el usuario existe
-      if(!user) return responseUtility.error('auth.login.error');
-      if(!_token){
-        const validation = await this.compare(_params.password, user.password)
-        // If password validation fails, return an error response
-        if(!validation){
-          return responseUtility.error('auth.login.error')
-        }
-      }
-      
+
       return await this.buildSession(user, _params.app)
     } catch (error) {
       console.log('error', error)

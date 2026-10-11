@@ -160,7 +160,9 @@ class ThirdService {
       const third = await Third.findOne({_id:_params._id})
       .populate({
         path: 'user',
-        lean: true
+        // Nunca se devuelve el hash de la contraseña
+        select: '-password',
+        options: { lean: true }
       })
       .lean()
       let lead, interactions = []

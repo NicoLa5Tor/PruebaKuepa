@@ -2,6 +2,7 @@
 import mongoose from "mongoose"
 
 // @import_services
+import { programValidator } from "@app/domains/program/validators/programValidator"
 
 // @import_models
 import { Lead, Program } from "@app/models"
@@ -56,29 +57,21 @@ class ProgramService {
 
   public async upsert (_params) {
     try{
-      const data: any = {
-        name: typeof _params.name === 'string' ? _params.name.trim() : '',
-        description: typeof _params.description === 'string' ? _params.description.trim() : '',
-      }
-      if (_params.status !== undefined) data.status = _params.status
-
-      const fields: any = {}
-      if (!data.name) fields.name = 'required'
-      if (data.status !== undefined && !Program.schema.path('status').options.enum.includes(data.status)) fields.status = 'invalid'
-      if (_params._id && !mongoose.isValidObjectId(_params._id)) fields._id = 'invalid'
+      const { _id, ...data } = programValidator.pick(_params)
+      const fields = programValidator.validate({ _id, ...data })
       if (Object.keys(fields).length) return responseUtility.error('program.validation', null, { code: 400, fields })
 
-      if (_params._id && !await Program.exists({ _id: _params._id })) return responseUtility.error('program.not_found')
+      if (_id && !await Program.exists({ _id })) return responseUtility.error('program.not_found')
 
       // Nombre único sin distinguir mayúsculas ni tildes (collation de Mongo, strength 1)
       const duplicated = await Program.exists({
         name: data.name,
-        ...(_params._id ? { _id: { $ne: _params._id } } : {}),
+        ...(_id ? { _id: { $ne: _id } } : {}),
       }).collation({ locale: 'es', strength: 1 })
       if (duplicated) return responseUtility.error('program.duplicate')
 
-      const program = _params._id
-        ? await Program.findOneAndUpdate({ _id: _params._id }, { $set: data }, { new: true, lean: true })
+      const program = _id
+        ? await Program.findOneAndUpdate({ _id }, { $set: data }, { new: true, lean: true })
         : (await Program.create(data)).toObject()
 
       return responseUtility.success({

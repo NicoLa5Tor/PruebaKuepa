@@ -21,10 +21,13 @@ export function useEditableSetting<T>(key: string) {
   }
 
   useEffect(() => {
+    let active = true
     globalService.editSetting(key).then((response) => {
+      if (!active) return
       sync(response?.code === 200 ? response.value : null)
       setLoading(false)
     })
+    return () => { active = false }
   }, [key])
 
   const dirty = JSON.stringify(value) !== saved

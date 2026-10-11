@@ -5,7 +5,7 @@ import config from "config";
 const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
 export interface ICaptchaOptions {
-  // Peticiones que no necesitan captcha (p. ej. el login por token, que ya exige un JWT válido)
+  // Peticiones de la ruta que no necesitan captcha
   skip?: (req: Request) => boolean
 }
 

@@ -38,7 +38,6 @@ class LeadRoute {
     { method: 'post', path: '/contact', handler: this.controller.contact , middleware: [auth] },
     // público: lo usa el formulario de inscripción para clientes
     { method: 'post', path: '/external', handler: this.controller.external , middleware: [rateLimit({ name: 'external', max: 10, windowSeconds: 60 * 60 }), captcha()] },
-    { method: 'post', path: '/adviser-info', handler: this.controller.adviserInfo , middleware: [auth] },
   ] 
 
   public init () {

@@ -2,7 +2,7 @@
 import { Third } from "@app/models"
 
 // @import_types
-export type IFieldErrors = Record<string, string>
+import { IFieldErrors } from "@app/resources/errors/fieldErrors"
 
 interface ISettingSchema {
   // Se queda solo con los campos conocidos (lista blanca), igual que pick() en leadValidator

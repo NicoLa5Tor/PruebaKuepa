@@ -1,9 +1,9 @@
 // bg-orange-400 bg-red-500 hover:text-orange-400 hover:text-red-500 bg-orange-500 hover:text-orange-500
 
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useStore } from "@nanostores/react"
 import { access, user } from "@/atoms/kuepa"
-import { AuthService } from "@/services/authService"
+import authService from "@/services/authService"
 import { FormEvent, useEffect, useRef, useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { hasSession } from "@/util/session"
@@ -31,33 +31,16 @@ function Login () {
   const $access = useStore(access);
   const $user = useStore(user);
 
-  const { _token } = useParams();
   const [error, setError] = useState<any>(null)
 
-  const init = async ()=>{
-    const response = await authService.token({token:_token ||''}, 'kuepa')
-    if(response?.user){
-      authService.startSession(response)
-      setError(null)
-      location(`/home`)
-    } else {
-      setError('Usuario o contraseña incorrectos')
-    }
-  }
-
-
+  // Con sesión iniciada no se muestra el login: se va a la ruta pedida
   useEffect(()=>{
-    if(_token){
-      init()
-    }
     if(hasSession() && access.get()){
       setTimeout(()=>{
         location(from)
       },1000)
     } 
-  },[_token, $user])
-
-  const authService = new AuthService('/auth')
+  },[$user])
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const captcha = useRef<CaptchaHandle>(null)

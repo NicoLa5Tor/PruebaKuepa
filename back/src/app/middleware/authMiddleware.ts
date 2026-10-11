@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import config from "config";
 import { clearAuthCookie, readAuthCookie } from '@core/utilities/authCookie'
+import { User } from '@app/models'
 
 
 /**
@@ -20,6 +21,8 @@ export const request = async (req:Request, res: Response, next: NextFunction) =>
   try {
     const verify: any = jwt.verify(token, config.jwt)
     if (!verify?.user) return deny()
+    // Un usuario eliminado pierde la sesión aunque su cookie siga vigente
+    if (!await User.exists({ _id: verify.user })) return deny()
     req['params'].user_logged = verify.user
   } catch (error) {
     return deny()

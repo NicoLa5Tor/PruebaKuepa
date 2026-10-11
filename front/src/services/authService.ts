@@ -1,7 +1,10 @@
-import { access, token, user } from "../atoms/kuepa"
+import { access, user } from "../atoms/kuepa"
 import { post } from "../util/http"
 import { disconnectSocket } from "../util/socket"
 const API = '/auth'
+
+// Permisos del usuario guardados aparte por usuario; la misma llave al iniciar y al cerrar sesión
+const accessKey = (user_id?: string) => `kuepa:1.0.0:${user_id || 'no-user'}:context:access`
 
 export class AuthService {
   private api:string
@@ -26,42 +29,23 @@ export class AuthService {
   * el back lo dejó en una cookie HttpOnly.
   */
   public startSession (response: any, app: string = 'kuepa') {
-    token.set(null)
     user.set(response.user)
     const can = response.user.homes.find(_h=> _h.app === app)?.can
     if(can){
-      localStorage.setItem(`kuepa:1.0.0:${user.get()?._id || 'no-user'}:context:access`, JSON.stringify({can}))
+      localStorage.setItem(accessKey(user.get()?._id), JSON.stringify({can}))
       access.set({
         can: can
       })
     }
   }
 
-  public async token ({token}: {token:string}, app?: any)  {
-    const response = await post({api:`${this.api || API}/login`, options: {data: {token, app} }})
-    return response
-  }
-  
-  public async loginCode ({user, code, brand}: {user:string,code:string,brand:string}, app: any = 'kuepa')  {
-    const response = await post({api:`${this.api || API}/login-code`, options: {data: {user, code, brand, app} }})
-    return response
-  }
-
-  public async authEntities ()  {
-    const response = await post({api:`${this.api || API}/auth-entities`, options: {data: {}}})
-    return response
-  }
-
   public async logout ()  {
+    const key = accessKey(user.get()?._id)
     disconnectSocket()
     await post({api:`${this.api || API}/logout`, options: {data: {}}})
     user.set(null)
-    token.set(null)
-    
     access.set({can:[]})
-    setTimeout(()=>{
-      localStorage.removeItem(`kuepa:1.0:${user.get()?._id || 'no-user'}:context:access`)
-    },1000)
+    localStorage.removeItem(key)
   }
 }
 

@@ -20,19 +20,14 @@ class UserController {
 
   constructor () {}
 
-  // user_logged solo puede venir del middleware: el body no puede suplantar a otro usuario
-  private params = (req: Request) => ({
-    ...req._data(),
-    user_logged: req.params.user_logged
-  })
 
   public updateProfile = async(req: Request, res: Response) => {
-    const response = await this.service.updateProfile(this.params(req))
+    const response = await this.service.updateProfile(req._data())
     return responseUtility.build(res, response)
   }
 
   public upsertAddress = async(req: Request, res: Response) => {
-    const response = await this.service.upsertAddress(this.params(req))
+    const response = await this.service.upsertAddress(req._data())
     return responseUtility.build(res, response)
   }
 }

@@ -44,7 +44,7 @@ export const isLoginPopup = () => {
   }
 }
 
-// El payload lleva nuestro JWT: solo se entrega a nuestro propio origen
+// El payload lleva el usuario y sus permisos: solo se entrega a nuestro propio origen
 export const notifyOpener = (payload: Omit<SocialLoginMessage, 'type'>) => {
   window.opener.postMessage({ type: SOCIAL_LOGIN_MESSAGE, ...payload }, window.location.origin)
 }

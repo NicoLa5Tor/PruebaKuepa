@@ -30,14 +30,15 @@ const LeadSchema = new Schema({
   email: {type: Schema.Types.String},
   mobile_phone: {type: Schema.Types.String},
   interestProgram: {type: Schema.Types.ObjectId, ref: 'Program'},
-  contact: {type: Schema.Types.ObjectId, ref: 'Third'},
-  adviser: {type: Schema.Types.ObjectId, ref: 'Third'},
+  contact: {type: Schema.Types.ObjectId, ref: 'Third', index: true},
+  adviser: {type: Schema.Types.ObjectId, ref: 'Third', index: true},
   campaign: {type: Schema.Types.ObjectId, ref: 'Campaign'},
   adnetwork: {type: Schema.Types.ObjectId, ref: 'Adnetwork'},
   status:{
     type: Schema.Types.String,
     enum: ['active', 'inactive', 'grading', 'sold', 'dropped'],
-    default: 'active'
+    default: 'active',
+    index: true
   },
   trackings: [
     {
